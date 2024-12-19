@@ -1,0 +1,177 @@
+<%- include("../../views/partials/user/header.ejs") %>
+
+<style>
+    .errorMessage {
+        color: red;
+        font-size: 0.75rem;
+        display: none;
+    }
+    .google-signin-btn {
+        background-color: #fff;
+        color: #757575;
+        border: 1px solid #ddd;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px;
+        margin-top: 10px;
+        border-radius: 10px;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+        transition: background-color 0.3s, box-shadow 0.3s;
+        text-decoration: none;
+    }
+    .google-signin-btn:hover {
+        background-color: #f8f8f8;
+        box-shadow: 0 1px 6px rgba(0, 0, 0, 0.2);
+    }
+    .google-signin-btn svg {
+        margin-right: 10px;
+        height: 20px;
+        width: 20px;
+    }
+    .signup-link {
+        margin-top: 15px;
+        text-align: center;
+    }
+</style>
+
+<div class="container">
+    <div class="row">
+        <div class="col-12 col-sm-12 col-md-6 col-lg-6 main-col offset-md-3">
+            <div class="mb-4">
+                <form
+                    method="post"
+                    action="/login"
+                    id="loginForm"
+                    accept-charset="UTF-8"
+                    class="contact-form">
+                    <div class="row">
+                        <div class="col-12 col-sm-12 col-md-12 col-lg-12">
+                            <div class="form-group">
+                                <label for="userEmail">Email</label>
+                                <input
+                                    type="email"
+                                    name="email"
+                                    placeholder="Enter your email"
+                                    id="userEmail"
+                                    autocorrect="off"
+                                    autocapitalize="off"
+                                    autofocus=""
+                                />
+                                <div id="emailError" class="errorMessage"></div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-sm-12 col-md-12 col-lg-12">
+                            <div class="form-group">
+                                <label for="userPassword">Password</label>
+                                <input
+                                    type="password"
+                                    name="password"
+                                    placeholder="Enter your password"
+                                    id="userPassword"
+                                />
+                                <div id="passwordError" class="errorMessage"></div>
+                            </div>
+                        </div>
+                            <%if(locals.message && message.length>0){%>
+                                <div class="text text-danger text-center">
+                                    <%=message%>
+                                </div>
+                            <%}%>
+                    </div>
+                    <div class="row">
+                        <div class="text-center col-12 col-sm-12 col-md-12 col-lg-12">
+                            <input
+                                type="submit"
+                                class="btn mb-3"
+                                value="Login"
+                            />
+                            <p>Or log in with </p>
+                            <a href="/auth/google" class="google-signin-btn">
+                                <svg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M19.99 10.187c0-.82-.069-1.417-.216-2.037H10.2v3.698h5.441c-.109.918-.693 2.303-2.019 3.233l-.019.125 2.933 2.317l.203.02c1.86-1.739 2.934-4.296 2.934-7.34z" fill="#4285F4"/>
+                                    <path d="M10.2 20c2.647 0 4.879-.879 6.506-2.387l-3.103-2.448c-.83.58-1.941.975-3.403.975a5.815 5.815 0 0 1-5.516-4.068l-.12.01-3.045 2.39-.041.124C2.964 17.45 6.282 20 10.2 20z" fill="#34A853"/>
+                                    <path d="M4.684 11.972l-.13-.084A5.81 5.81 0 0 1 4.366 10c0-.73.125-1.438.348-2.087l-.012-.056-3.085-2.406-.1.048C.985 6.789 0 8.311 0 10c0 1.714.99 3.246 2.469 4.069l2.215-1.747z" fill="#FBBC05"/>
+                                    <path d="M10.2 3.975c1.863 0 3.119.854 3.834 1.572l2.803-2.757C15.059.975 12.848 0 10.2 0 6.281 0 2.964 2.549 1.605 6.258l2.204 1.736c.624-1.988 2.431-4.02 5.391-4.02z" fill="#EB4335"/>
+                                </svg>
+                                Sign in with Google
+                            </a>
+                            <div class="signup-link">
+                                Don't have an account? <a href="/signup">Sign up</a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include("../../views/partials/user/footer.ejs") %>
+
+<script>
+    const emailId = document.getElementById("userEmail");
+    const passwordId = document.getElementById("userPassword");
+
+    const emailError = document.getElementById("emailError");
+    const passwordError = document.getElementById("passwordError");
+
+    const loginForm = document.getElementById("loginForm");
+
+    function emailValidate() {
+        const emailVal = emailId.value;
+        const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+        if (emailVal.trim() === "") {
+            emailError.style.display = "block";
+            
+            return false;
+        } else if (!emailPattern.test(emailVal)) {
+            emailError.style.display = "block";
+            emailError.innerHTML = "Invalid Email Format";
+            return false;
+        } else {
+            emailError.style.display = "none";
+            emailError.innerHTML = "";
+            return true;
+        }
+    }
+
+    function passwordValidate() {
+        const passVal = passwordId.value;
+
+        if (passVal.trim() === "") {
+            passwordError.style.display = "block";
+            passwordError.innerHTML = "Password cannot be empty";
+            return false;
+        } else if (passVal.length < 8) {
+            passwordError.style.display = "block";
+            passwordError.innerHTML = "Password should contain at least 8 characters";
+            return false;
+        } else {
+            passwordError.style.display = "none";
+            passwordError.innerHTML = "";
+            return true;
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        loginForm.addEventListener("submit", (e) => {
+            // Clear previous error messages
+            emailError.style.display = "none";
+            passwordError.style.display = "none";
+
+            const isEmailValid = emailValidate();
+            const isPasswordValid = passwordValidate();
+
+            if (!isEmailValid || !isPasswordValid) {
+                e.preventDefault();
+            }
+        });
+
+        // Add real-time validation on blur
+        emailId.addEventListener("blur", emailValidate);
+        passwordId.addEventListener("blur", passwordValidate);
+    });
+</script>
+//emailError.innerHTML = "Email cannot be empty";
