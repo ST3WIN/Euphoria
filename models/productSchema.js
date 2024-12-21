@@ -19,11 +19,11 @@ const productSchema = new Schema({
         ref:"Category",
         required:true
     },
-    productRegularPrice:{
+    regularPrice:{
         type:Number,
         requred:true
     },
-    productSalePrice:{
+    salePrice:{
         type:Number,
         required:true
     },

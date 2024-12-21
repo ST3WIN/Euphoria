@@ -7,7 +7,7 @@ const brandSchema = new Schema({
         required:true
     },
     brandImage:{
-        tyep:[String],
+        type:[String],
         required:true
     },
     isActive:{
@@ -21,4 +21,4 @@ const brandSchema = new Schema({
 })
 
 const Brand = mongoose.model("Brand",brandSchema)
-module.export = Brand
+module.exports = Brand

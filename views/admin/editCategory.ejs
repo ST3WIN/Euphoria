@@ -1,0 +1,64 @@
+<%- include("../partials/admin/header.ejs") %>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6 mt-5">
+            <h2 class="text-center mb-4">Edit Category</h2>
+            <form method="post" action="/admin/editCategory/<%= category._id %>" onsubmit="return validateForm()">
+                <div class="mb-3">
+                    <label for="name" class="form-label">Name</label>
+                    <input id="name" type="text" name="categoryName" value="<%= category.name %>" class="form-control">
+                    <small id="name-error" class="text-danger"></small>
+                </div>
+
+                <div class="mb-3">
+                    <label for="description" class="form-label">Description</label>
+                    <textarea id="description" name="description" class="form-control" rows="3"><%= category.description %></textarea>
+                    <small id="description-error" class="text-danger"></small>
+                </div>
+
+                <div class="d-flex justify-content-between">
+                    <a href="/admin/category" class="btn btn-secondary">Back</a>
+                    <button class="btn btn-primary" type="submit">Update Category</button>
+                </div>
+
+                <% if (typeof msg !== 'undefined' && msg) { %>
+                    <div class="alert alert-warning mt-3"><%= msg %></div>
+                <% } %>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function clearErrorMessage() {
+        document.getElementById("name-error").textContent = "";
+        document.getElementById("description-error").textContent = "";
+    }
+
+    function displayErrorMessage(id, message) {
+        document.getElementById(id).textContent = message;
+    }
+
+    function validateForm() {
+        clearErrorMessage();
+        const name = document.getElementsByName("categoryName")[0].value.trim();
+        const description = document.getElementById("description").value.trim();
+        let isValid = true;
+
+        if (name === "") {
+            displayErrorMessage("name-error", "Please enter a name");
+            isValid = false;
+        } else if (!/^[a-zA-Z\s]+$/.test(name)) {
+            displayErrorMessage("name-error", "Category name should contain only alphabetic characters");
+            isValid = false;
+        }
+        
+        if (description === "") {
+            displayErrorMessage("description-error", "Please enter a description");
+            isValid = false;
+        }
+        
+        return isValid;
+    }
+</script>

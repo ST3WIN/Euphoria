@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Male Fashion Admin - Brands</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        /* Table header style */
+        .table-teal {
+            background-color: #0d9488;
+        }
+    
+        /* Table row hover effect */
+        .table-row:hover {
+            background-color: #f1f5f9;
+            transition: background-color 0.3s ease;
+        }
+    
+        /* Brand logo styling */
+        .brand-logo-container {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            overflow: hidden;
+            margin: auto;
+        }
+    
+        .brand-logo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+    
+        /* Button styles */
+        .btn-outline-danger:hover, 
+        .btn-outline-success:hover, 
+        .btn-outline-primary:hover {
+            color: white;
+            transform: scale(1.05);
+            transition: all 0.2s ease;
+        }
+    
+        .btn-outline-danger:hover {
+            background-color: #dc3545;
+            border-color: #dc3545;
+        }
+    
+        .btn-outline-success:hover {
+            background-color: #198754;
+            border-color: #198754;
+        }
+    
+        .btn-outline-primary:hover {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+        }
+    
+        /* Center text alignment */
+        .text-center {
+            text-align: center !important;
+        }
+    
+        /* Table shadow */
+        .table {
+            border-radius: 8px;
+            overflow: hidden;
+        }
+    
+        /* Sidebar styling */
+        .sidebar {
+            background-color: #0d9488;
+            min-height: 100vh;
+        }
+    
+        .sidebar .nav-link {
+            color: white;
+        }
+    
+        .sidebar .nav-link:hover,
+        .sidebar .nav-link.active {
+            background-color: #0f766e;
+        }
+    
+        /* Main content styling */
+        .main-content {
+            background-color: #f3f4f6;
+        }
+    
+        /* Form and table styling */
+        .brand-form, .brands-table {
+            background-color: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06);
+        }
+    
+        .brands-table table tr:nth-child(even) {
+            background-color: #f9fafb;
+        }
+    
+        .brands-table table tr:hover {
+            background-color: #e5e7eb;
+        }
+    
+        /* Button custom style */
+        .btn-teal {
+            background: linear-gradient(90deg, #0d9488, #0f766e);
+            color: white;
+            border: none;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+    
+        .btn-teal:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+    
+        /* Badge styles */
+        .badge.alert-danger {
+            background: linear-gradient(90deg, #ff6b6b, #ff5252);
+            color: white;
+        }
+    
+        .badge.alert-success {
+            background: linear-gradient(90deg, #4caf50, #388e3c);
+            color: white;
+        }
+    
+        /* Modal styles */
+        .modal-content {
+            border-radius: 0.75rem;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+    
+        .modal-header, .modal-footer {
+            background-color: #f1f5f9;
+        }
+    
+        /* Focused form control */
+        .form-control:focus {
+            border-color: #0d9488;
+            box-shadow: 0 0 5px rgba(13, 148, 136, 0.5);
+        }
+    
+        /* Table striped effect */
+        .table-striped > tbody > tr:nth-of-type(odd) {
+            background-color: #f8f9fa;
+        }
+    
+        /* Primary button hover effect */
+        button.btn-primary:hover {
+            background-color: #1976d2;
+            transform: scale(1.02);
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+    
+</head>
+<body>
+    <%- include("../partials/admin/header.ejs") %>
+
+    <!-- Main content -->
+    <main class="col-md-9 ms-sm-auto col-lg-12 px-md-4 main-content">
+        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+            <h1 class="h2">Brands</h1>
+        </div>
+
+        <!-- Add Brand Form -->
+        <form id="addBrandForm" method="post" action="/admin/addBrand" class="brand-form p-4 mb-4" enctype="multipart/form-data">
+            <div class="row g-3">
+                <div style="color: green;"><%=success%></div>
+
+                <div class="col-sm-6">
+                    <label for="brandName" class="form-label">Brand Name</label>
+                    <input type="text" class="form-control" name="brandName" id="brandName" required>
+                    <div id="error" style="color: red"></div>
+                </div>
+                <div class="col-sm-6">
+                    <label for="brandImage" class="form-label">Brand Image</label>
+                    <input type="file" class="form-control" name="brandImage" id="brandLogo" required>
+                </div>
+                <% if (typeof error !== 'undefined' && error) { %>
+                    <div class="alert alert-danger"><%= error %></div>
+                <% } %>
+            </div>
+            <button type="submit" class="btn btn-teal mt-3">Add Brand</button>
+        </form>
+
+        <!-- Brands Table -->
+        <div class="brands-table table-responsive">
+            <table class="table table-striped table-hover align-middle shadow-sm">
+                <thead class="table-teal text-white">
+                    <tr>
+                        <th scope="col" class="text-center">Brand Name</th>
+                        <th scope="col" class="text-center">Brand Logo</th>
+                        <th scope="col" class="text-center">Status</th>
+                        <th scope="col" class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% data.reverse().forEach((brand, index) => { %>
+                    <tr class="table-row">
+                        <td class="text-center fw-bold"><%= brand.brandName %></td>
+                        <td class="text-center">
+                            <div class="brand-logo-container">
+                                <img
+                                    src="/uploads/re-image/<%= brand.brandImage%>"
+                                    alt="<%= brand.brandName %>"
+                                    class="brand-logo img-fluid rounded-circle"
+                                >
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <% if (brand.isBlock === true) { %>
+                            <span class="badge bg-danger">Blocked</span>
+                            <% } else { %>
+                            <span class="badge bg-success">Active</span>
+                            <% } %>
+                        </td>
+                        <td class="text-center">
+                            <% if (brand.isBlock == false) { %>
+                                <a href="/admin/blockbrand?id=<%= brand._id %>" class="btn btn-outline-danger btn-sm">
+                                    <i class="bi bi-lock"></i> Block
+                                </a>
+                            <% } else { %>
+                                <a href="/admin/unblockbrand?id=<%= brand._id %>" class="btn btn-outline-success btn-sm">
+                                    <i class="bi bi-unlock"></i> Unblock
+                                </a>
+                            <% } %>
+                            <button class="btn btn-outline-primary btn-sm" onclick="openEditModal('<%= brand._id %>', '<%= brand.brandName %>', '<%= brand.brandImage %>')">
+                                <i class="bi bi-pencil"></i> Edit
+                            </button>
+                            <!-- <button class="btn btn-outline-danger btn-sm" onclick="confirmDelete('<%= brand._id %>')">
+                                <i class="bi bi-trash"></i> Delete
+                            </button> -->
+                        </td>
+                    </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+        </div>        
+    </main>
+
+    <!-- Edit Brand Modal -->
+    <div class="modal fade" id="editBrandModal" tabindex="-1" aria-labelledby="editBrandModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editBrandModalLabel">Edit Brand</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Form starts here -->
+                    <form id="editBrandForm" enctype="multipart/form-data" >
+                        <input type="hidden" id="editBrandId">
+                        <div class="mb-3">
+                            <label for="editBrandName" class="form-label">Brand Name</label>
+                            <input type="text" name="newName" class="form-control" id="editBrandName" required>
+                            <div id="error1" style="color: red;"></div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editBrandLogo" class="form-label">Brand Logo</label>
+                            <input type="file" name="logo" class="form-control" id="editBrandLogo" required>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-primary"  onclick="confirmUpdate(event)">Save changes</button>
+                        </div>
+                    </form>
+                    <!-- Form ends here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+   <script>
+    
+    const brandName = document.getElementById("brandName");
+const formSubmit = document.getElementById("addBrandForm");
+const error = document.getElementById("error");
+
+// name validation
+function nameValidation() {
+    const brand = brandName.value.trim();
+    const namePattern = /^[A-Za-z\s]+$/;
+
+    if (brand === "") {
+        error.style.display = "block";
+        error.innerHTML = "Please enter a valid Brand name";
+    } else if (!namePattern.test(brand)) {
+        error.style.display = "block";
+        error.innerHTML = "Name can only contain alphabets and spaces";
+    } else {
+        error.style.display = "none";
+        error.innerHTML = ""; 
+    }
+}
+
+
+document.addEventListener("DOMContentLoaded", function () {
+    formSubmit.addEventListener("submit", (e) => {
+        nameValidation(); 
+
+        if (error.style.display === "block") {
+            e.preventDefault();
+        }
+    });
+});
+// -------------
+
+// edit brand
+const editBrand = document.getElementById("editBrandModal");
+const editButton = document.getElementById("edit");
+
+
+
+
+
+    function confirmDelete(brandId) {
+    console.log("Brand ID:", brandId);
+    if (!brandId) {
+        Swal.fire('Error!', 'Brand ID is missing.', 'error');
+        return;
+    }
+    Swal.fire({
+        title: 'Are you sure?',
+        text: "Do you want to delete this brand?",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, delete it!',
+        cancelButtonText: 'Cancel'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            deleteBrand(brandId);
+        }
+    });
+}
+
+
+function deleteBrand(brandId) {
+    fetch(`/admin/deletebrand/${brandId}`, {
+        method: 'DELETE', 
+    })
+    .then(response => {
+        if (!response.ok) {
+            return Promise.reject('Failed to delete brand');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.message === "Brand deleted successfully") {
+            Swal.fire('Deleted!', 'The brand has been deleted.', 'success')
+                .then(() => {
+                    location.reload();
+                });
+        } else {
+            Swal.fire('Error!', 'There was a problem deleting the brand.', 'error');
+        }
+    })
+    .catch(error => {
+        console.error(error);
+        Swal.fire('Error!', 'There was a problem with the delete request.', 'error');
+    });
+}
+
+
+
+
+
+
+ // Open Edit Brand Modal and populate the fields
+ function openEditModal(brandId, brandName){
+       
+        document.getElementById('editBrandId').value = brandId;
+        document.getElementById('editBrandName').value = brandName;
+
+
+        var myModal = new bootstrap.Modal(document.getElementById('editBrandModal'));
+        myModal.show();
+      
+    };
+
+
+
+
+function confirmUpdate(event) {
+    if (event) {
+        event.preventDefault();
+    }
+    console.log("Starting brand update process...");
+    // Fetch input values
+    const brandId = document.getElementById("editBrandId").value.trim();
+    const brandName = document.getElementById("editBrandName").value.trim();
+    const logo = document.getElementById('editBrandLogo').files[0];
+    const error1 = document.getElementById("error1");
+
+    console.log("Fetched input values:", { brandId, brandName, logo });
+
+    // Validation
+    const namePattern = /^[A-Za-z\s]+$/;
+    if (!brandName) {
+        error1.style.display = "block";
+        error1.innerHTML = "Please enter a valid Brand name";
+        console.warn("Validation failed: Brand name is empty.");
+        return;
+    }
+    if (!namePattern.test(brandName)) {
+        error1.style.display = "block";
+        error1.innerHTML = "Name can only contain alphabets and spaces";
+        console.warn("Validation failed: Brand name contains invalid characters.");
+        return;
+    }
+
+    error1.style.display = "none";
+    error1.innerHTML = "";
+    console.log("Validation passed.");
+
+    // Prepare FormData
+    const formData = new FormData();
+    formData.append('brandId', brandId);
+    formData.append('brandName', brandName);
+    if (logo) {
+        formData.append('logo', logo);
+        console.log("Logo file appended to FormData.");
+    } else {
+        console.log("No logo file provided.");
+    }
+
+    console.log("Sending request to update brand...");
+    
+    fetch(`/admin/updateBrand`, {
+    method: "POST",
+    body: formData,
+})
+    .then(response => {
+        console.log("Received response from server:", response, typeof(response));
+        if (!response.ok) {
+            console.warn("Response not OK. Parsing error...");
+            return response.json().then(err => Promise.reject(err));
+        }
+        return response.json(); // Parse JSON once here
+    })
+    .then(response => {
+        console.log("Parsed response JSON:", response);
+        console.log(typeof(response));
+        if (response.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Brand updated successfully!',
+                confirmButtonText: 'OK'
+            }).then(() => {
+                location.reload();
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error updating brand',
+                text: response.message || 'An unexpected error occurred.',
+            });
+            console.error("Error updating brand:", response.message || "Unknown error.");
+        }
+    })
+    .catch(error => {
+        console.error("Error occurred during fetch:", error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error updating brand',
+            text: error.message || 'Failed to send the request.',
+        });
+    });
+
+
+}
+
+
+
+   </script>
+</body>
+</html>
