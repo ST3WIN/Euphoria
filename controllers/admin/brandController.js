@@ -69,7 +69,74 @@ const addBrand = async (req, res) => {
     }
 }
 
+const  blockbrand = async (req,res)=>{
+    try {
+        const id = req.query.id;
+        await Brand.updateOne({_id:id},{$set:{isBlocked:true}});
+        res.redirect("/admin/brands");
+    } catch (error) {
+        res.redirect("admin/pageError");
+    }
+};
+
+const unblockbrand = async(req,res)=>{
+    try {
+        const id = req.query.id;
+        await Brand.updateOne({_id:id},{$set:{isBlocked:false}});
+        res.redirect("/admin/brands");
+    } catch (error) {
+        res.redirect("admin/pageError");
+    }
+}
+
+const deleteBrand = async (req, res) => {
+    try {
+        const { id } = req.params; // Get the brand ID from the URL path
+        const brand = await Brand.findByIdAndDelete(id); // Assuming you have a Brand model
+        if (!brand) {
+            return res.status(404).send({ message: "Brand not found" });
+        }
+        res.status(200).send({ message: "Brand deleted successfully" });
+    } catch (error) {
+        res.status(500).send({ message: "Error deleting brand", error });
+    }
+}
+
+const updateBrand = async (req, res) => {
+    try {
+        console.log("update working");
+        const id = req.body.brandId;
+        const brandName = req.body.brandName;
+        const image = req.file;
+
+        // const findBrand = await Brand.findOne({ brandName: brandName });
+        const findBrand = await Brand.findOne({ brandName: { $regex: `^${brandName}$`, $options: "i" } });
+        if (findBrand) {
+            console.log("find brand");
+            return res.status(400).json({ success: false, message: "Brand already exists" });
+        } else {
+            const updateBrand = await Brand.updateOne(
+                { _id: id },
+                { $set: { brandName: brandName, brandImage: image?.filename } }
+            );
+
+            if (!updateBrand.modifiedCount) {
+                return res.status(404).json({ success: false, message: "Brand not found" });
+            }
+
+            return res.status(200).json({ success: true, message: "Brand updated successfully" });
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: "Error updating brand", error });
+    }
+}
+
 module.exports = {
     getBrandPage,
-    addBrand
+    addBrand,
+    blockbrand,
+    unblockbrand,
+    deleteBrand,
+    updateBrand
 }

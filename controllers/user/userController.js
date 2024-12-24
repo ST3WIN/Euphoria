@@ -180,6 +180,8 @@ const login = async(req,res)=>{
         const email = req.body.email
         const password = req.body.password
         const findUser = await User.findOne({isAdmin:0,email:email})
+        console.log('FindUser',findUser)
+        console.log('ivde')
         if(!findUser){
             return res.render("login",{message:"User not found"})
         }

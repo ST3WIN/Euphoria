@@ -6,7 +6,7 @@ const productSchema = new Schema({
         type:String,
         required:true
     },
-    productDescription:{
+    description:{
         type:String,
         required:true
     },
@@ -35,7 +35,7 @@ const productSchema = new Schema({
         type:Number,
         default:true
     },
-    productSize:{
+    size:{
         type:String,
         required:true
     },
@@ -43,13 +43,13 @@ const productSchema = new Schema({
         type:[String],
         required:true
     },
-    isActive:{
+    isBlocked:{
         type:Boolean,
         default:false
     },
     status:{
         type:String,
-        enum:["Avilable","Out of stock"],
+        enum:["Available","Out of stock"],
         required:true,
         default:"Available"
     }

@@ -33,6 +33,24 @@
         margin-top: 15px;
         text-align: center;
     }
+    .password-container {
+        position: relative;
+    }
+    .password-toggle {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        border: none;
+        background: none;
+        cursor: pointer;
+        padding: 0;
+    }
+    .password-toggle svg {
+        width: 20px;
+        height: 20px;
+        color: #757575;
+    }
 </style>
 
 <div class="container">
@@ -64,12 +82,20 @@
                         <div class="col-12 col-sm-12 col-md-12 col-lg-12">
                             <div class="form-group">
                                 <label for="userPassword">Password</label>
-                                <input
-                                    type="password"
-                                    name="password"
-                                    placeholder="Enter your password"
-                                    id="userPassword"
-                                />
+                                <div class="password-container">
+                                    <input
+                                        type="password"
+                                        name="password"
+                                        placeholder="Enter your password"
+                                        id="userPassword"
+                                    />
+                                    <button type="button" class="password-toggle" id="passwordToggle" aria-label="Toggle password visibility">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="eye-icon">
+                                            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                                            <circle cx="12" cy="12" r="3"/>
+                                        </svg>
+                                    </button>
+                                </div>
                                 <div id="passwordError" class="errorMessage"></div>
                             </div>
                         </div>
@@ -112,11 +138,18 @@
 <script>
     const emailId = document.getElementById("userEmail");
     const passwordId = document.getElementById("userPassword");
+    const passwordToggle = document.getElementById("passwordToggle");
 
     const emailError = document.getElementById("emailError");
     const passwordError = document.getElementById("passwordError");
 
     const loginForm = document.getElementById("loginForm");
+
+    // Password toggle functionality
+    passwordToggle.addEventListener("click", function() {
+        const type = passwordId.getAttribute("type") === "password" ? "text" : "password";
+        passwordId.setAttribute("type", type);
+    });
 
     function emailValidate() {
         const emailVal = emailId.value;
@@ -124,7 +157,7 @@
 
         if (emailVal.trim() === "") {
             emailError.style.display = "block";
-            
+            emailError.innerHTML = "Email cannot be empty";
             return false;
         } else if (!emailPattern.test(emailVal)) {
             emailError.style.display = "block";
@@ -174,4 +207,3 @@
         passwordId.addEventListener("blur", passwordValidate);
     });
 </script>
-//emailError.innerHTML = "Email cannot be empty";
