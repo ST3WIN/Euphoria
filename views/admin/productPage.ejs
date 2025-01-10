@@ -1,6 +1,8 @@
 <%- include("../../views/partials/admin/header") %>
 <head>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs/dist/cropper.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs/dist/cropper.min.css">
+    
     <style>
         .error-message {
             color: red;
@@ -202,14 +204,60 @@
         </div>
     </div>
 </section>
-
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdn.jsdelivr.net/npm/cropperjs/dist/cropper.min.js"></script>
 <script>
 // Store croppers in an object to track them
 const croppers = {};
-function validateAndSubmit(){
-    if(validateForm()){
-        document.forms[0].submit()
+function validateAndSubmit() {
+    if (validateForm()) {
+        const form = document.forms[0];
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Create FormData object
+            const formData = new FormData(this);
+            
+            // Submit the form using fetch
+            fetch('/admin/addProducts', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (response.ok) {
+                    // Show success message
+                    Swal.fire({
+                        title: 'Success!',
+                        text: 'Product has been added successfully',
+                        icon: 'success',
+                        confirmButtonText: 'OK'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            // Redirect to products page or reset form
+                            window.location.href = '/admin/products'; // Adjust this URL as needed
+                        }
+                    });
+                } else {
+                    // Show error message
+                    Swal.fire({
+                        title: 'Error!',
+                        text: 'Failed to add product. Please try again.',
+                        icon: 'error',
+                        confirmButtonText: 'OK'
+                    });
+                }
+            })
+            .catch(error => {
+                Swal.fire({
+                    title: 'Error!',
+                    text: 'An error occurred while adding the product',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
+            });
+        });
+        
+        form.submit();
     }
 }
 

@@ -1,0 +1,541 @@
+<%- include("../../views/partials/user/header.ejs") %>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #111111;
+            --secondary-color: #e53637;
+            --transition: all 0.3s ease;
+        }
+        
+        body {
+            background-color: #f8f9fa;
+        }
+
+        .breadcrumb-option {
+            background: linear-gradient(to right, #292929, #2a2a2a);
+            padding: 40px 0;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .breadcrumb__text h4 {
+            color: white;
+            font-size: 2.5rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .breadcrumb__links a {
+            color: var(--secondary-color);
+            text-decoration: none;
+        }
+
+        .breadcrumb__links span {
+            color: #ffffff;
+            margin-left: 10px;
+        }
+
+        .vertical-tabs {
+            border-right: 1px solid #dee2e6;
+            height: 100%;
+            background: white;
+            border-radius: 15px 0 0 15px;
+            padding: 20px 0;
+        }
+
+        .nav-link {
+            border: none;
+            padding: 15px 25px;
+            color: var(--primary-color);
+            transition: var(--transition);
+            border-radius: 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 5px 0;
+        }
+
+        .nav-link i {
+            font-size: 1.2rem;
+            width: 24px;
+        }
+
+        .nav-link.active {
+            background: linear-gradient(to right, #fff5f5, #ffe5e5);
+            color: var(--secondary-color);
+            border-right: 4px solid var(--secondary-color);
+            font-weight: 500;
+        }
+
+        .nav-link:hover:not(.active) {
+            background-color: #f8f9fa;
+            transform: translateX(5px);
+        }
+
+        .tab-content {
+            background: white;
+            border-radius: 0 15px 15px 0;
+            padding: 30px;
+        }
+
+        .card {
+            border: none;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            border-radius: 15px;
+            margin-bottom: 25px;
+            transition: var(--transition);
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+
+        .card-body {
+            padding: 25px;
+        }
+
+        .card-title {
+            color: var(--primary-color);
+            font-weight: 600;
+            margin-bottom: 25px;
+            font-size: 1.25rem;
+        }
+
+        .form-control {
+            border: 1.5px solid #e0e0e0;
+            padding: 12px 15px;
+            border-radius: 10px;
+            transition: var(--transition);
+        }
+
+        .form-control:focus {
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 0.2rem rgba(229, 54, 55, 0.25);
+        }
+
+        .form-label {
+            font-weight: 500;
+            color: #555;
+            margin-bottom: 8px;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .btn-primary {
+            background: var(--secondary-color);
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-color);
+            transform: translateY(-2px);
+        }
+
+        .btn-outline-primary {
+            border: 2px solid var(--secondary-color);
+            color: var(--secondary-color);
+        }
+
+        .btn-outline-primary:hover {
+            background: var(--secondary-color);
+            color: white;
+        }
+
+        .order-card, .address-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+            transition: var(--transition);
+        }
+
+        .order-card:hover, .address-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .wallet-card {
+            background: linear-gradient(145deg, #ffffff, #f8f9fa);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        }
+
+        .wallet-card h2 {
+            color: var(--primary-color);
+            font-size: 2.5rem;
+            font-weight: 600;
+        }
+
+        .table {
+            vertical-align: middle;
+        }
+
+        .table thead th {
+            border-bottom: 2px solid #dee2e6;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .badge {
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+
+        .text-success {
+            color: #28a745 !important;
+        }
+
+        .text-danger {
+            color: #dc3545 !important;
+        }
+
+        .profile-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.1);
+            overflow: hidden;
+            margin-bottom: 40px;
+        }
+        .nav-link i {
+            font-size: 1.2rem;
+            width: 24px;
+            text-align: center;
+            margin-right: 8px;
+            transition: var(--transition);
+        }
+        
+        .nav-link.active i {
+            color: var(--secondary-color);
+        }
+        
+        .card-title i {
+            color: var(--secondary-color);
+        }
+        
+        /* Enhance icon animations */
+        .nav-link:hover i {
+            transform: scale(1.1);
+        }
+
+        /* Add animation for tab transitions */
+        .tab-pane {
+            animation: fadeIn 0.3s ease-in;
+        }
+        .info-display {
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .info-label {
+            font-weight: 500;
+            color: #666;
+            width: 120px;
+            min-width: 120px;
+        }
+        
+        .info-value {
+            color: #333;
+            flex: 1;
+        }
+        
+        .info-display:last-child {
+            border-bottom: none;
+        }
+    
+        .editable-email {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+    
+        .edit-button {
+            background: none;
+            border: none;
+            color: var(--secondary-color);
+            cursor: pointer;
+            padding: 5px;
+            transition: var(--transition);
+        }
+    
+        .edit-button:hover {
+            color: var(--primary-color);
+            transform: scale(1.1);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+<section class="breadcrumb-option">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="breadcrumb__text">
+                    <h4>Profile</h4>
+                    <div class="breadcrumb__links">
+                        <a href="/">Home</a>
+                        <span>Profile</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="container my-5">
+    <div class="row">
+        <!-- Left Side Tabs -->
+        <div class="col-md-3">
+            <div class="vertical-tabs">
+                <div class="nav flex-column nav-tabs" id="profileTabs" role="tablist">
+                    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#details" type="button">
+                        <i class="fas fa-user-circle"></i> User Details
+                    </button>
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#address" type="button">
+                        <i class="fas fa-map-marker-alt"></i> Address
+                    </button>
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#orders" type="button">
+                        <i class="fas fa-shopping-bag"></i> Orders
+                    </button>
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#wallet" type="button">
+                        <i class="fas fa-wallet"></i> Wallet
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side Content -->
+        <div class="col-md-9">
+            <div class="tab-content" id="profileTabsContent">
+                <!-- User Details Tab -->
+                <div class="tab-pane fade show active" id="details">
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title mb-4"><i class="fas fa-user-edit me-2"></i>Personal Information</h5>
+                            
+                            <div class="info-display">
+                                <span class="info-label"><i class="fas fa-user me-2"></i>Name</span>
+                                <span class="info-value"><%= user.firstName%> <%= user.lastName%></span>
+                            </div>
+                
+                            <div class="info-display">
+                                <span class="info-label"><i class="fas fa-envelope me-2"></i>Email</span>
+                                <div class="info-value editable-email">
+                                    <span><%= user.email%></span>
+                                    <a href="/change-email"><button class="edit-button" title="Edit Email">
+                                        <i class="fas fa-edit"></i>
+                                    </button></a>
+                                </div>
+                            </div>
+                
+                            <div class="info-display">
+                                <span class="info-label"><i class="fas fa-phone me-2"></i>Phone</span>
+                                <span class="info-value"><%= user.phone%></span>
+                            </div>
+                        </div>
+                    </div>
+                
+                    <!-- Password Change Card remains the same -->
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title mb-4"><i class="fas fa-lock me-2"></i>Change Password</h5>
+                            <form>
+                                <div class="mb-3">
+                                    <label class="form-label">Current Password</label>
+                                    <input type="password" class="form-control" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">New Password</label>
+                                    <input type="password" class="form-control" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Confirm New Password</label>
+                                    <input type="password" class="form-control" required>
+                                </div>
+                                <button type="submit" class="btn btn-warning">Change Password</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Address Tab -->
+                <div class="tab-pane fade" id="address">
+                    <h5 class="mb-4"><i class="fas fa-home me-2"></i>Your Addresses</h5>
+                    <!-- Existing Address 1 -->
+                    <div class="address-card">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="mb-0">Home Address</h6>
+                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#editAddress1">
+                                Edit
+                            </button>
+                        </div>
+                        <p class="mb-0">123 Main St, New York, NY 10001</p>
+                        <div class="collapse mt-3" id="editAddress1">
+                            <form>
+                                <div class="mb-3">
+                                    <label class="form-label">Street Address</label>
+                                    <input type="text" class="form-control" value="123 Main St">
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col">
+                                        <label class="form-label">City</label>
+                                        <input type="text" class="form-control" value="New York">
+                                    </div>
+                                    <div class="col">
+                                        <label class="form-label">State</label>
+                                        <input type="text" class="form-control" value="NY">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Zip Code</label>
+                                    <input type="text" class="form-control" value="10001">
+                                </div>
+                                <button type="submit" class="btn btn-primary">Save Changes</button>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <!-- Add New Address -->
+                    <button class="btn btn-outline-primary mt-3" data-bs-toggle="collapse" data-bs-target="#addNewAddress">
+                        Add New Address
+                    </button>
+                    <div class="collapse mt-3" id="addNewAddress">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-title mb-3">New Address</h6>
+                                <form>
+                                    <div class="mb-3">
+                                        <label class="form-label">Address Name</label>
+                                        <input type="text" class="form-control" placeholder="e.g., Summer House">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Street Address</label>
+                                        <input type="text" class="form-control" placeholder="Enter street address">
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col">
+                                            <label class="form-label">City</label>
+                                            <input type="text" class="form-control" placeholder="Enter city">
+                                        </div>
+                                        <div class="col">
+                                            <label class="form-label">State</label>
+                                            <input type="text" class="form-control" placeholder="Enter state">
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Zip Code</label>
+                                        <input type="text" class="form-control" placeholder="Enter zip code">
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Add Address</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Orders Tab -->
+                <div class="tab-pane fade" id="orders">
+                    <h5 class="mb-4"><i class="fas fa-box me-2"></i>Your Orders</h5>
+                    <div class="order-card">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <p class="text-muted mb-0">Order #12345</p>
+                                <small class="text-muted">January 1, 2024</small>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="mb-0">3 Items</p>
+                                <small class="text-muted">Delivered on January 5, 2024</small>
+                            </div>
+                            <div class="col-md-3 text-end">
+                                <p class="mb-0">$150.00</p>
+                                <button class="btn btn-sm btn-outline-primary mt-2">View Details</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="order-card">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <p class="text-muted mb-0">Order #12344</p>
+                                <small class="text-muted">December 28, 2023</small>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="mb-0">2 Items</p>
+                                <small class="text-muted">Delivered on December 31, 2023</small>
+                            </div>
+                            <div class="col-md-3 text-end">
+                                <p class="mb-0">$89.99</p>
+                                <button class="btn btn-sm btn-outline-primary mt-2">View Details</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Wallet Tab -->
+                <div class="tab-pane fade" id="wallet">
+                    <div class="row">
+                        <div class="col-md-4 mb-4">
+                            <div class="wallet-card p-4">
+                                <h5 class="mb-3"><i class="fas fa-money-bill-wave me-2"></i>Wallet Balance</h5>
+                                <h2 class="mb-4">$250.00</h2>
+                                <button class="btn btn-primary">Add Money</button>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <h5 class="mb-4">Recent Transactions</h5>
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Description</th>
+                                            <th>Amount</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>Jan 3, 2024</td>
+                                            <td>Order Payment #12345</td>
+                                            <td class="text-danger">-$150.00</td>
+                                            <td><span class="badge bg-success">Completed</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Jan 1, 2024</td>
+                                            <td>Wallet Top-up</td>
+                                            <td class="text-success">+$200.00</td>
+                                            <td><span class="badge bg-success">Completed</span></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<%- include("../../views/partials/user/footer.ejs") %>

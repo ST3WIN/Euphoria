@@ -42,5 +42,13 @@ router.post("/updateBrand",uploads.single("logo"),auth.adminAuth,brandController
 //Product management
 router.get("/addProducts",auth.adminAuth,productController.getProductsPage)
 router.post("/addProducts",auth.adminAuth,uploads.array("images",4),productController.addProducts)
+router.get("/products",auth.adminAuth,productController.getAllProducts)
+router.post("/addProductOffer",auth.adminAuth,productController.addProductOffer)
+router.post("/removeProductOffer",auth.adminAuth,productController.removeProductOffer)
+router.get("/blockProduct",auth.adminAuth,productController.blockProduct)
+router.get("/unblockProduct",auth.adminAuth,productController.unblockProduct)
+router.get("/editProduct",auth.adminAuth,productController.getEditProduct)
+router.post("/editProduct/:id",auth.adminAuth,uploads.array("images",4),productController.editProduct)
+router.post("/deleteImage",auth.adminAuth,productController.deleteSingleImage)
 
 module.exports = router

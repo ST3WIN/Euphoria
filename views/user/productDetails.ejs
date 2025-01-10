@@ -1,0 +1,701 @@
+<head>
+    <style>
+        .img-magnifier-container {
+            position: relative;
+        }
+
+        .img-magnifier-glass {
+            position: absolute;
+            border: 2px solid #8c8c8c;
+            border-radius: 50%;
+            width: 100px;
+            height: 100px;
+            display: none;
+            /* Initially hidden */
+        }
+        .checked{
+            color: orange;
+        }
+
+        .zoomable-image {
+            cursor: none;
+            /* Hide the cursor over the image */
+        }
+    </style>
+</head>
+<%- include("../../views/partials/user/header.ejs") %>
+
+<section class="shop-details">
+    <div class="product__details__pic" style="background-color: #e2e0c8;">
+        <div class="container">
+            <!-- Breadcrumb -->
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="product__details__breadcrumb">
+                        <a href="/">Home</a>
+                        <a href="/shop">Shop</a>
+                        <span>Product Details</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Product Images -->
+            <div class="row">
+                <!-- Thumbnails -->
+                <div class="col-lg-3 col-md-3">
+                    <ul class="nav nav-tabs" role="tablist">
+                        <% if (product.productImage && product.productImage.length > 0) { %>
+                            <% product.productImage.forEach((img, index) => { %>
+                                <li class="nav-item">
+                                    <a class="nav-link <%= index === 0 ? 'active' : '' %>" 
+                                       data-toggle="tab" 
+                                       href="#tabs-<%= index + 1 %>" 
+                                       role="tab">
+                                        <div class="product__thumb__pic set-bg" 
+                                             data-setbg="/uploads/re-image/<%= img %>" 
+                                             style="border-radius: 10px">
+                                        </div>
+                                    </a>
+                                </li>
+                            <% }) %>
+                        <% } else { %>
+                            <li class="nav-item">
+                                <div class="product__thumb__pic set-bg" 
+                                     data-setbg="/assets/default-product.jpg" 
+                                     style="border-radius: 10px">
+                                </div>
+                            </li>
+                        <% } %>
+                    </ul>
+                </div>
+
+                <!-- Main Image -->
+                <div class="col-lg-6 col-md-9">
+                    <div class="tab-content">
+                        <% if (product.productImage && product.productImage.length > 0) { %>
+                            <% product.productImage.forEach((img, index) => { %>
+                                <div class="tab-pane <%= index === 0 ? 'active' : '' %>" 
+                                     id="tabs-<%= index + 1 %>" 
+                                     role="tabpanel">
+                                    <div class="product__details__pic__item img-magnifier-container">
+                                        <img id="myimage-<%= index %>" 
+                                             src="/uploads/re-image/<%= img %>" 
+                                             alt="<%= product.productName %>" 
+                                             class="zoomable-image" 
+                                             style="border-radius: 14px">
+                                    </div>
+                                </div>
+                            <% }) %>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Product Details -->
+    <div class="product__details__content">
+        <div class="container">
+            <div class="row d-flex justify-content-center">
+                <div class="col-lg-8">
+                    <div class="product__details__text">
+                        <!-- Product Name -->
+                        <h4><%= product.productName || 'Product Name Not Available' %></h4>
+
+                        <!-- Rating -->
+                        <div class="rating">
+                            <% for(let i = 0; i < 5; i++) { %>
+                                <span class="fa fa-star checked <%= i < Math.floor(product.rating || 0) ? 'checked' : '' %>"></span>
+                            <% } %>
+                        </div>
+
+                        <!-- Offer -->
+                        <% if (product.productOffer && product.productOffer > 0) { %>
+                            <h6 style="color: red;"><b><%= product.productOffer %>% off</b></h6>
+                        <% } else { %>
+                            <h6><b>NO DISCOUNT</b></h6>
+                        <% } %>
+
+                        <!-- Price -->
+                        <div class="price-section">
+                            <% if (product.salePrice === product.regularPrice) { %>
+                                <h3>₹<%= (product.regularPrice || 0).toLocaleString('en-IN') %></h3>
+                            <% } else { %>
+                                <h3>
+                                    ₹<%= (product.salePrice || 0).toLocaleString('en-IN') %>
+                                    <span style="color: red; text-decoration: line-through;">
+                                        ₹<%= (product.regularPrice || 0).toLocaleString('en-IN') %>
+                                    </span>
+                                </h3>
+                            <% } %>
+                        </div>
+
+                        <!-- Description -->
+                        <p><%= product.description || 'No description available' %></p>
+                        <p style="color: red;">Hurry up only <%= product.quantity %> left in stock!</p>
+                        <!-- Stock Display -->
+                        <div id="stock-display">Choose your size</div>
+
+                        <!-- Size Selection -->
+                        <div class="product__details__option">
+                            <div class="product__details__option__size" data-product-id="<%= product._id %>">
+                                <span>Size: <%= product.size%></span>
+                                <!-- <% ['50ML', '100ML'].forEach(size => { %>
+                                    <label for="<%= size %>">
+                                        <%= size %>
+                                        <input type="radio" 
+                                               id="<%= size %>" 
+                                               name="size" 
+                                               value="<%= size %>">
+                                    </label>
+                                <% }) %> -->
+                            </div>
+                        </div>
+
+                        <!-- Quantity and Add to Cart -->
+                        <div class="product__details__cart__option">
+                            <div class="quantity">
+                                <span>Quantity: </span>
+                                <div class="pro-qty">
+                                    <input type="number" 
+                                           id="quantityInput" 
+                                           value="1" 
+                                           min="1" 
+                                           max="6">
+                                </div>
+                            </div>
+                            <a href="#" 
+                               class="primary-btn" 
+                               id="addToCartBtn" 
+                               data-product-id="<%= product._id %>">
+                                Add to Cart
+                            </a>
+                        </div>
+
+                        <!-- Wishlist -->
+                        <div class="product__details__btns__option">
+                            <a href="#" onclick="addToWishlist('<%= product._id %>')">
+                                <i class="fa fa-heart"></i> Add to Wishlist
+                            </a>
+                        </div>
+
+                        <!-- Payment Info -->
+                        <div class="product__details__last__option">
+                            <h5><span>Guaranteed Safe Checkout</span></h5>
+                           
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<%- include("../../views/partials/user/footer.ejs") %>
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+        <!-- <script>
+            let currentSize = null;
+            let currentColor = null;
+
+            document.addEventListener('DOMContentLoaded', function () {
+                document.querySelectorAll('.color-label').forEach(label => {
+                    label.style.display = 'none';
+                });
+
+                updateAddToCartButton();
+                setupStockCheck();
+                setupCartNavigation();
+            });
+
+            document.querySelectorAll('input[name="size"]').forEach(sizeInput => {
+                sizeInput.addEventListener('change', function () {
+                    const selectedSize = this.value;
+                    currentSize = selectedSize;
+                    resetColorSelection();
+                    showRelevantColors(selectedSize);
+                    const stockDisplay = document.getElementById('stock-display');
+                    stockDisplay.textContent = 'Please select both size and color to see stock';
+                    stockDisplay.style.color = 'gray';
+                    const quantityInput = document.getElementById('quantityInput');
+                    quantityInput.value = 1; // Reset quantity to 1
+                    updateAddToCartButton();
+                    setTimeout(() => {
+                        updateStockDisplay();
+                    }, 10);
+                });
+            });
+
+            document.querySelectorAll('input[name="color"]').forEach(colorInput => {
+                colorInput.addEventListener('change', function () {
+                    if (!currentSize) {
+                        this.checked = false;
+                        Swal.fire({
+                            icon: 'info',
+                            title: 'Incomplete Selection',
+                            text: 'Please select a size first.',
+                            confirmButtonText: 'OK',
+                            customClass: {
+                                confirmButton: 'btn btn-warning',
+                            },
+                        });
+                        return;
+                    }
+
+                    const selectedColor = this.value;
+                    currentColor = selectedColor;
+                    updateColorSwatchHighlight(this);
+                    updateStockDisplay();
+                    updateAddToCartButton();
+                });
+            });
+
+            function resetColorSelection() {
+                currentColor = null;
+                document.querySelectorAll('input[name="color"]').forEach(input => {
+                    input.checked = false;
+                });
+                removeColorHighlight();
+                const stockDisplay = document.getElementById('stock-display');
+                stockDisplay.textContent = 'Please select a color for the chosen size';
+                stockDisplay.style.color = 'gray';
+            }
+
+            function showRelevantColors(selectedSize) {
+                const productId = '<%= product._id %>';
+                const stockDisplay = document.getElementById('stock-display');
+                document.querySelectorAll('.color-label').forEach(label => {
+                    const colorInput = label.querySelector('input[name="color"]');
+                    if (label.dataset.size === selectedSize) {
+                        label.style.display = 'inline-block';
+                        const color = colorInput.value;
+                        fetch(`/product/${productId}/stock?size=${encodeURIComponent(selectedSize)}&color=${encodeURIComponent(color)}`)
+                            .then(response => response.json())
+                            .catch(error => {
+                                console.error('Error fetching stock for color:', error);
+                            });
+                    } else {
+                        label.style.display = 'none';
+                    }
+                });
+                stockDisplay.textContent = "Please select a color to see stock";
+                stockDisplay.style.color = 'gray';
+            }
+
+            function updateColorSwatchHighlight(selectedInput) {
+                removeColorHighlight();
+                const swatch = selectedInput.parentElement.querySelector('.color-swatch');
+                if (swatch) {
+                    swatch.classList.add('selected');
+                }
+            }
+
+            function removeColorHighlight() {
+                document.querySelectorAll('.color-swatch').forEach(swatch => {
+                    swatch.classList.remove('selected');
+                });
+            }
+
+            function updateStockDisplayWithQuantity(totalStock) {
+                const stockDisplay = document.getElementById('stock-display');
+                const remainingStock = totalStock;
+                if (remainingStock === 0) {
+                    stockDisplay.textContent = 'Out of stock';
+                    stockDisplay.style.color = 'red';
+                } else if (remainingStock <= 10) {
+                    stockDisplay.textContent = `Stock available: ${remainingStock}`;
+                    stockDisplay.style.color = 'orange';
+                } else {
+                    stockDisplay.textContent = 'In Stock';
+                    stockDisplay.style.color = 'green';
+                }
+            }
+
+            function updateStockDisplay() {
+                const stockDisplay = document.getElementById('stock-display');
+                if (!currentSize) {
+                    stockDisplay.textContent = 'Please select a size to see available colors';
+                    stockDisplay.style.color = 'gray';
+                    return;
+                }
+                if (!currentColor) {
+                    stockDisplay.textContent = 'Please select a color';
+                    stockDisplay.style.color = 'gray';
+                    return;
+                }
+                const productId = '<%= product._id %>';
+                fetch(`/product/${productId}/stock?size=${encodeURIComponent(currentSize)}&color=${encodeURIComponent(currentColor)}`)
+                    .then(response => {
+                        if (!response.ok) throw new Error('Stock request failed');
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.stock !== undefined) {
+                            updateStockDisplayWithQuantity(data.stock);
+                        } else {
+                            stockDisplay.textContent = 'Variant not found';
+                            stockDisplay.style.color = 'red';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching stock:', error);
+                        stockDisplay.textContent = 'Error checking stock';
+                        stockDisplay.style.color = 'red';
+                    });
+            }
+
+            function updateAddToCartButton() {
+                const addToCartBtn = document.getElementById('addToCartBtn');
+                if (currentSize && currentColor) {
+                    const productId = '<%= product._id %>';
+                    fetch(`/product/${productId}/stock?size=${encodeURIComponent(currentSize)}&color=${encodeURIComponent(currentColor)}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.stock > 0) {
+                                addToCartBtn.classList.remove('disabled');
+                                addToCartBtn.removeAttribute('disabled');
+                            } else {
+                                addToCartBtn.classList.add('disabled');
+                                addToCartBtn.setAttribute('disabled', 'true');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error fetching stock:', error);
+                            addToCartBtn.classList.add('disabled');
+                            addToCartBtn.setAttribute('disabled', 'true');
+                        });
+                } else {
+                    addToCartBtn.classList.add('disabled');
+                    addToCartBtn.setAttribute('disabled', 'true');
+                }
+            }
+
+            function setupStockCheck() {
+                const quantity = 1;
+                const stockDisplay = document.getElementById('stock-display');
+                document.querySelectorAll('.qtybtn').forEach(button => {
+                    button.addEventListener('click', async function () {
+                        const productId = '<%= product._id %>';
+                        const size = currentSize;
+                        const color = currentColor;
+                        if (size && color) {
+                            const response = await fetch(`/product/${productId}/stock?size=${encodeURIComponent(size)}&color=${encodeURIComponent(color)}`);
+                            const data = await response.json();
+                            if (data.stock !== undefined) {
+                                if (data.stock >= quantity) {
+                                    stockDisplay.textContent = `In stock: ${data.stock}`;
+                                    stockDisplay.style.color = 'green';
+                                } else {
+                                    stockDisplay.textContent = 'Out of stock';
+                                    stockDisplay.style.color = 'red';
+                                }
+                            } else {
+                                stockDisplay.textContent = 'Stock information unavailable';
+                                stockDisplay.style.color = 'gray';
+                            }
+                        } else {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Incomplete Selection',
+                                text: 'Please select both size and color.',
+                                confirmButtonText: 'OK',
+                                customClass: {
+                                    confirmButton: 'btn btn-warning',
+                                },
+                            });
+                        }
+                    });
+                });
+            }
+
+            document.getElementById('addToCartBtn').addEventListener('click', async function (event) {
+                event.preventDefault();
+                if (!currentSize || !currentColor) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Incomplete Selection',
+                        text: 'Please select both size and color before adding to cart.',
+                        confirmButtonText: 'OK',
+                        customClass: {
+                            confirmButton: 'btn btn-warning',
+                        },
+                    });
+                    return;
+                }
+                const productId = '<%= product._id %>';
+                const quantity = document.getElementById('quantityInput').value;
+                try {
+                    const response = await fetch('/cart/add', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            productId,
+                            size: currentSize,
+                            color: currentColor,
+                            quantity
+                        })
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success!',
+                            text: 'Item added to cart successfully!',
+                        }).then((result) => {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Failed',
+                            text: data.message || 'Failed to add product to cart.',
+                            confirmButtonText: 'OK',
+                            customClass: {
+                                confirmButton: 'btn btn-danger',
+                            },
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error adding to cart:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'An error occurred while adding the product to the cart.',
+                        confirmButtonText: 'OK',
+                        customClass: {
+                            confirmButton: 'btn btn-danger',
+                        },
+                    });
+                }
+            });
+
+            function setupCartNavigation() {
+                document.querySelectorAll('.site-header__cart').forEach(link => {
+                    link.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        window.location.href = '/cart';
+                    });
+                });
+            }
+
+            function handleAddToCart(productId) {
+                fetch('/cart/add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        productId: productId,
+                        quantity: 1
+                    })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Success!',
+                                text: 'Product added to cart successfully!',
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Failed',
+                                text: data.message || 'Failed to add product to cart.',
+                                confirmButtonText: 'OK',
+                                customClass: {
+                                    confirmButton: 'btn btn-danger',
+                                },
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'An error occurred while adding the product to the cart.',
+                            confirmButtonText: 'OK',
+                            customClass: {
+                                confirmButton: 'btn btn-danger',
+                            },
+                        });
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.location.href = data.redirectTo; // Redirect to login
+                        }
+                    });
+            }
+
+            function initMagnifier() {
+                const magnifierGlass = document.createElement('div');
+                magnifierGlass.setAttribute('class', 'img-magnifier-glass');
+                document.querySelectorAll('.zoomable-image').forEach(img => {
+                    img.parentElement.style.position = 'relative';
+                    img.parentElement.appendChild(magnifierGlass.cloneNode(true));
+                });
+            }
+
+            document.addEventListener('DOMContentLoaded', function () {
+                initMagnifier();
+            });
+
+            document.addEventListener('DOMContentLoaded', () => {
+                const cartLinks = document.querySelectorAll('.site-header__cart');
+                cartLinks.forEach(link => {
+                    link.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        window.location.href = '/cart';
+                        e.preventDefault();
+                    });
+                });
+            });
+
+            document.addEventListener('DOMContentLoaded', () => {
+                const productItems = document.querySelectorAll('.product__item__pic');
+                productItems.forEach(item => {
+                    const defaultBg = item.getAttribute('data-setbg');
+                    const hoverBg = item.getAttribute('data-hoverbg');
+                    item.style.backgroundImage = `url(${defaultBg})`;
+                    item.addEventListener('mouseover', () => {
+                        item.style.backgroundImage = `url(${hoverBg})`;
+                    });
+                    item.addEventListener('mouseout', () => {
+                        item.style.backgroundImage = `url(${defaultBg})`;
+                    });
+                });
+            });
+        </script>
+      <script>
+        async function addToWishlist(productId) {
+            try {
+                const response = await fetch("/wishlist/add", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ productId }),
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    Swal.fire({
+                        icon: "success",
+                        title: "Added to Wishlist!",
+                        text: result.message,
+                    });
+                } else {
+                    Swal.fire({
+                        icon: "error",
+                        title: "Failed to Add to Wishlist",
+                        text: result.message,
+                    });
+                }
+            } catch (error) {
+                Swal.fire({
+                    icon: "error",
+                    title: "An Error Occurred",
+                    text: "Unable to add to wishlist. Please try again.",
+                });
+                console.error("Add to Wishlist Error:", error);
+            }
+        }
+    </script>
+    <script>
+        async function checkUserBlockStatus() {
+            try {
+                const response = await fetch("/check-block-status", {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                });
+                const data = await response.json();
+
+                if (data.blocked) {
+
+                    window.location.href = "/login"; // Redirect to the login page or home page
+                }
+            } catch (error) {
+                console.error("Error checking block status:", error);
+            }
+        }
+
+        // Check every 30 seconds
+        setInterval(checkUserBlockStatus, 2000);
+    </script> -->
+    <script>
+        function magnify(imgID, zoom) {
+            var img, glass, w, h, bw;
+            img = document.getElementById(imgID);
+        
+            // Create magnifier glass
+            glass = document.createElement("DIV");
+            glass.setAttribute("class", "img-magnifier-glass");
+            img.parentElement.insertBefore(glass, img);
+        
+            glass.style.backgroundImage = "url('" + img.src + "')";
+            glass.style.backgroundRepeat = "no-repeat";
+            glass.style.backgroundSize = (img.width * zoom) + "px " + (img.height * zoom) + "px";
+            bw = 3;
+            w = glass.offsetWidth / 2;
+            h = glass.offsetHeight / 2;
+        
+            // Show and hide the magnifier on hover
+            img.addEventListener("mouseenter", function () {
+                glass.style.display = "block";
+            });
+            img.addEventListener("mouseleave", function () {
+                glass.style.display = "none";
+            });
+        
+            // Move magnifier
+            glass.addEventListener("mousemove", moveMagnifier);
+            img.addEventListener("mousemove", moveMagnifier);
+        
+            function moveMagnifier(e) {
+                var pos, x, y;
+                e.preventDefault();
+                pos = getCursorPos(e); // Get cursor position
+                x = pos.x;
+                y = pos.y;
+            
+                // Prevent the magnifier glass from being positioned outside the image
+                if (x > img.width - (w / zoom)) { x = img.width - (w / zoom); }
+                if (x < w / zoom) { x = w / zoom; }
+                if (y > img.height - (h / zoom)) { y = img.height - (h / zoom); }
+                if (y < h / zoom) { y = h / zoom; }
+            
+                // Set the position of the magnifier glass
+                glass.style.left = (x - w) + "px";
+                glass.style.top = (y - h) + "px";
+            
+                // Set the position of the background image correctly
+                glass.style.backgroundPosition = "-" + ((x * zoom) - w) + "px -" + ((y * zoom) - h) + "px";
+            }
+        
+            function getCursorPos(e) {
+                var a, x = 0, y = 0;
+                e = e || window.event;
+                a = img.getBoundingClientRect();
+                x = e.pageX - a.left;
+                y = e.pageY - a.top;
+                x = x - window.pageXOffset;
+                y = y - window.pageYOffset;
+                return { x: x, y: y };
+            }
+        }
+        
+        // This part should be generated by your server-side code
+        document.addEventListener("DOMContentLoaded", function () {
+            magnify("myimage-0", 2);
+            magnify("myimage-1", 2);
+            magnify("myimage-2", 2);
+            magnify("myimage-3", 2);
+            
+        });
+    </script>

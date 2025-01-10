@@ -54,13 +54,12 @@
 
     <div class="card mb-4">
         <div class="card-body">
-            <!-- Search -->
             <div class="row mb-3">
                 <div class="col-lg-4 col-md-6">
-                    <form class="searchform">
+                    <form class="searchform" method="GET">
                         <div class="input-group">
-                            <input type="text" class="form-control" placeholder="Search users...">
-                            <button class="btn btn-light bg" type="button">
+                            <input type="text" name="search" class="form-control" placeholder="Search users..." value="<%= locals.search || '' %>">
+                            <button class="btn btn-light bg" type="submit">
                                 <i class="material-icons md-search"></i>
                             </button>
                         </div>
@@ -68,7 +67,6 @@
                 </div>
             </div>
 
-            <!-- Users Table -->
             <div class="table-responsive">
                 <table class="table table-hover">
                     <thead>
@@ -76,47 +74,42 @@
                             <th>User</th>
                             <th>Email</th>
                             <th>Phone</th>
-                            <th >Action</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <% for(let i=0;i<data.length;i++){%>
+                        <% for(let i=0; i < data.length; i++) { %>
                         <tr>
-                           <td><%= data[i].firstName%></td>
-                           <td><%= data[i].email%></td>
-                           <td><%= data[i].phone%></td>
+                            <td><%= data[i].firstName %></td>
+                            <td><%= data[i].email %></td>
+                            <td><%= data[i].phone %></td>
                             <td>
-                                <%if(data[i].isBlocked===false){%>
-                                
-                                <button class="btn btn-danger" style="width: 100px;">
-                                    <a href="/admin/blockCustomer?id=<%=data[i]._id%>" class="text-white" style="text-decoration: none;">Block</a>
-                                </button>
-                                <%}else{%>
-                                <button class="btn btn-success" style="width: 100px;">
-                                    <a href="/admin/unblockCustomer?id=<%=data[i]._id%>" class="text-white" style="text-decoration: none;">Unblock</a>
-                                </button> 
-                                <%}%>
+                                <% if(data[i].isBlocked === false) { %>
+                                    <a href="/admin/blockCustomer?id=<%=data[i]._id%>" class="btn btn-danger" style="width: 100px; text-decoration: none;">Block</a>
+                                <% } else { %>
+                                    <a href="/admin/unblockCustomer?id=<%=data[i]._id%>" class="btn btn-success" style="width: 100px; text-decoration: none;">Unblock</a>
+                                <% } %>
                             </td>
                         </tr>
-                        <%}%>
+                        <% } %>
                     </tbody>
                 </table>
             </div>
 
-            <!-- Pagination -->
             <div class="pagination-area mt-15 mb-50">
-                <nav aria-label="Page navigation example">
+                <nav aria-label="Page navigation">
                     <ul class="pagination justify-content-start">
                         <% for (let i = 1; i <= totalPage; i++) { %>
-                            <li class="page-item <%= i === currentPage ? 'active' : '' %>">
-                                <a class="page-link" href="?page=<%= i %>"><%= i %></a>
+                            <li class="page-item <%= i === parseInt(currentPage) ? 'active' : '' %>">
+                                <a class="page-link" href="?page=<%= i %><%= locals.search ? '&search=' + search : '' %>"><%= i %></a>
                             </li>
                         <% } %>
                     </ul>
                 </nav>
             </div>
         </div>
-    </section> <!-- content-main end// -->
+    </div>
+</section>
     <footer class="main-footer font-xs">
         <div class="row pb-30 pt-15">
             <div class="col-sm-6">

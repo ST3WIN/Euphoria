@@ -1,0 +1,331 @@
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .profile-header {
+            background: #f8f9fa;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+        .profile-image {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .vertical-tabs {
+            border-right: 1px solid #dee2e6;
+            height: 100%;
+        }
+        .vertical-tabs .nav-link {
+            border: none;
+            border-radius: 0;
+            padding: 1rem 1.5rem;
+            color: #495057;
+            text-align: left;
+            width: 100%;
+        }
+        .vertical-tabs .nav-link.active {
+            background-color: #f8f9fa;
+            border-right: 3px solid #dc3545;
+            font-weight: 500;
+        }
+        .order-card {
+            border: 1px solid #dee2e6;
+            margin-bottom: 1rem;
+        }
+        .wallet-card {
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .address-card {
+            border: 1px solid #dee2e6;
+            margin-bottom: 1rem;
+            padding: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+<!-- <div class="profile-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-3 text-center">
+                <img src="/placeholder.svg" alt="Profile" class="profile-image mb-3">
+            </div>
+            <div class="col-md-9">
+                <h1 class="text text-secondary">Welcome</h1>
+                <h2>John Smith</h2>
+                <p class="text-muted">john.smith@example.com</p>
+            </div>
+        </div>
+    </div>
+</div> -->
+
+<div class="container">
+    <div class="row">
+        <!-- Left Side Tabs -->
+        <div class="col-md-3">
+            <div class="vertical-tabs">
+                <div class="nav flex-column nav-tabs" id="profileTabs" role="tablist">
+                    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#details" type="button">
+                        User Details
+                    </button>
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#address" type="button">
+                        Address
+                    </button>
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#orders" type="button">
+                        Orders
+                    </button>
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#wallet" type="button">
+                        Wallet
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side Content -->
+        <div class="col-md-9">
+            <div class="tab-content" id="profileTabsContent">
+                <!-- User Details Tab -->
+                <div class="tab-pane fade show active" id="details">
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title mb-4">Personal Information</h5>
+                            <form>
+                                <div class="mb-3">
+                                    <label class="form-label">Full Name</label>
+                                    <input type="text" class="form-control" value="John Smith">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Email</label>
+                                    <input type="email" class="form-control" value="john.smith@example.com">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Phone</label>
+                                    <input type="tel" class="form-control" value="+1 234 567 890">
+                                </div>
+                                <button type="submit" class="btn btn-primary">Update Profile</button>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title mb-4">Change Password</h5>
+                            <form>
+                                <div class="mb-3">
+                                    <label class="form-label">Current Password</label>
+                                    <input type="password" class="form-control" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">New Password</label>
+                                    <input type="password" class="form-control" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Confirm New Password</label>
+                                    <input type="password" class="form-control" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Change Password</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Address Tab -->
+                <div class="tab-pane fade" id="address">
+                    <h5 class="mb-4">Your Addresses</h5>
+                    <!-- Existing Address 1 -->
+                    <div class="address-card">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="mb-0">Home Address</h6>
+                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#editAddress1">
+                                Edit
+                            </button>
+                        </div>
+                        <p class="mb-0">123 Main St, New York, NY 10001</p>
+                        <div class="collapse mt-3" id="editAddress1">
+                            <form>
+                                <div class="mb-3">
+                                    <label class="form-label">Street Address</label>
+                                    <input type="text" class="form-control" value="123 Main St">
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col">
+                                        <label class="form-label">City</label>
+                                        <input type="text" class="form-control" value="New York">
+                                    </div>
+                                    <div class="col">
+                                        <label class="form-label">State</label>
+                                        <input type="text" class="form-control" value="NY">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Zip Code</label>
+                                    <input type="text" class="form-control" value="10001">
+                                </div>
+                                <button type="submit" class="btn btn-primary">Save Changes</button>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <!-- Existing Address 2 -->
+                    <div class="address-card">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="mb-0">Work Address</h6>
+                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#editAddress2">
+                                Edit
+                            </button>
+                        </div>
+                        <p class="mb-0">456 Business Ave, New York, NY 10002</p>
+                        <div class="collapse mt-3" id="editAddress2">
+                            <form>
+                                <div class="mb-3">
+                                    <label class="form-label">Street Address</label>
+                                    <input type="text" class="form-control" value="456 Business Ave">
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col">
+                                        <label class="form-label">City</label>
+                                        <input type="text" class="form-control" value="New York">
+                                    </div>
+                                    <div class="col">
+                                        <label class="form-label">State</label>
+                                        <input type="text" class="form-control" value="NY">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Zip Code</label>
+                                    <input type="text" class="form-control" value="10002">
+                                </div>
+                                <button type="submit" class="btn btn-primary">Save Changes</button>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <!-- Add New Address -->
+                    <button class="btn btn-success mt-3" data-bs-toggle="collapse" data-bs-target="#addNewAddress">
+                        Add New Address
+                    </button>
+                    <div class="collapse mt-3" id="addNewAddress">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-title mb-3">New Address</h6>
+                                <form>
+                                    <div class="mb-3">
+                                        <label class="form-label">Address Name</label>
+                                        <input type="text" class="form-control" placeholder="e.g., Summer House">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Street Address</label>
+                                        <input type="text" class="form-control" placeholder="Enter street address">
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col">
+                                            <label class="form-label">City</label>
+                                            <input type="text" class="form-control" placeholder="Enter city">
+                                        </div>
+                                        <div class="col">
+                                            <label class="form-label">State</label>
+                                            <input type="text" class="form-control" placeholder="Enter state">
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Zip Code</label>
+                                        <input type="text" class="form-control" placeholder="Enter zip code">
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Add Address</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Orders Tab -->
+                <div class="tab-pane fade" id="orders">
+                    <div class="order-card p-3">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <p class="text-muted mb-0">Order #12345</p>
+                                <small class="text-muted">January 1, 2024</small>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="mb-0">3 Items</p>
+                                <small class="text-muted">Delivered on January 5, 2024</small>
+                            </div>
+                            <div class="col-md-3 text-end">
+                                <p class="mb-0">$150.00</p>
+                                <button class="btn btn-sm btn-outline-primary mt-2">View Details</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="order-card p-3">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <p class="text-muted mb-0">Order #12344</p>
+                                <small class="text-muted">December 28, 2023</small>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="mb-0">2 Items</p>
+                                <small class="text-muted">Delivered on December 31, 2023</small>
+                            </div>
+                            <div class="col-md-3 text-end">
+                                <p class="mb-0">$89.99</p>
+                                <button class="btn btn-sm btn-outline-primary mt-2">View Details</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Wallet Tab -->
+                <div class="tab-pane fade" id="wallet">
+                    <div class="row">
+                        <div class="col-md-4 mb-4">
+                            <div class="wallet-card p-4">
+                                <h5 class="mb-3">Wallet Balance</h5>
+                                <h2 class="mb-4">$250.00</h2>
+                                <button class="btn btn-primary">Add Money</button>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <h5 class="mb-4">Recent Transactions</h5>
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Description</th>
+                                            <th>Amount</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>Jan 3, 2024</td>
+                                            <td>Order Payment #12345</td>
+                                            <td class="text-danger">-$150.00</td>
+                                            <td><span class="badge bg-success">Completed</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Jan 1, 2024</td>
+                                            <td>Wallet Top-up</td>
+                                            <td class="text-success">+$200.00</td>
+                                            <td><span class="badge bg-success">Completed</span></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

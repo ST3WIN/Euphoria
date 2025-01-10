@@ -137,9 +137,10 @@ ol {
 	background-position: top center;
 }
 
+
 .spad {
-	padding-top: 100px;
-	padding-bottom: 100px;
+	padding-top: 30px;
+	/* padding-bottom: 100px; */
 }
 
 .text-white h1,
@@ -584,7 +585,12 @@ ol {
 }
 
 .hero__items {
-	height: 800px;
+	height: 630px; /* Set your desired height */
+    width: 100%; /* Ensure full width */
+    background-repeat: no-repeat;
+    background-size: cover; /* Makes the image cover the container */
+    background-position: center; /* Centers the image */
+    overflow: hidden;
 	padding-top: 230px;
 }
 
@@ -918,7 +924,7 @@ ol {
 }
 
 .filter__controls li {
-	color: #b7b7b7;
+	color: rgb(20, 20, 20);
 	font-size: 24px;
 	font-weight: 700;
 	list-style: none;

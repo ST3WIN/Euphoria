@@ -4,7 +4,7 @@ const userAuth = (req,res,next)=>{
     if(req.session.user){
         User.findById(req.session.user)
         .then(data=>{
-            if(data && !data.isBloacked){
+            if(data && !data.isBlocked){
                 next()
             }else{
                 req.redirect("/login")

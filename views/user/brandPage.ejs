@@ -1,0 +1,128 @@
+<%- include("../../views/partials/user/header") %>
+<section class="hero">
+    <div class="hero__slider owl-carousel">
+        <div class="hero__items set-bg" data-setbg="img/hero/banner.jpeg">
+            <div class="container">
+                <div class="row">
+                    <div class="col-xl-5 col-lg-7 col-md-8">
+                        <div class="hero__text">
+                            <h6 >Creed Collection</h6>
+                            <h2 class="text text-white">Aventus For Her</h2>
+                            <p class="text text-white">Aventus For Her marks the irresistible feminine counterpart to the legendary Aventus.</p>
+                            <a href="/productDetails?id=67753f1afe9d56eefd28b928" class="primary-btn bg-white text-dark" >Shop now <span class="arrow_right"></span></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="hero__items set-bg" data-setbg="img/hero/banner-2.jpeg">
+            <div class="container">
+                <div class="row">
+                    <div class="col-xl-5 col-lg-7 col-md-8">
+                        <div class="hero__text">
+                            <!-- <h6>Summer Collection</h6> -->
+                            <h2 class="text text-white">Dior Sauvage</h2>
+                            <p class="text text-white">Inspiration for the creation of Sauvage Eau de Parfum was taken from the desert in the magical hour of twilight: mixed with the coolness of the night, the burning desert air exudes profound scents.</p>
+                            <a href="/productDetails?id=67754687fe9d56eefd28b952" class="primary-btn bg-white text-dark">Shop now <span class="arrow_right"></span></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+  </section>
+<section class="product spad">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-12 mt-5">
+                <ul class="filter__controls">
+                    <li data-filter=".new-arrivals">All Brands</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Search Bar -->
+        <!-- <div class="row mb-4">
+            <div class="col-lg-12">
+                <form action="" method="get">
+                    <div class="input-group input-group-sm border border-1 border-grey rounded-pill mx-auto" style="max-width: 500px;">
+                        <input type="text" class="form-control border-0 rounded-pill" placeholder="Search brands" name="search" value="<%= search || '' %>">
+                        <button class="btn border-0" type="submit">Search</button>
+                    </div>
+                </form>
+            </div>
+        </div> -->
+
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="row">
+                    <% if (data && data.length > 0) { %>
+                        <% for(let i = 0; i < data.length; i++) { %>
+                            <div class="col-lg-4 col-md-6 col-sm-6">
+                                <div class="product__item">
+                                    <div class="product__item__pic set-bg">
+                                        <img style="height: 260px; width: 268px; object-fit: cover;" 
+                                             src="/uploads/re-image/<%= data[i].brandImage[0] %>" 
+                                             alt="<%= data[i].brandName %>">
+                                        <!-- <% if(!data[i].isActive) { %>
+                                            <span class="position-absolute top-0 start-0 badge bg-danger m-2">
+                                                Inactive
+                                            </span>
+                                        <% } %> -->
+                                    </div>
+                                    <div class="product__item__text">
+                                        <h6><%= data[i].brandName %></h6>
+                                        <!-- <div class="d-flex justify-content-between align-items-center mt-2">
+                                            <% if(!data[i].isBlocked) { %>
+                                                <button class="btn btn-danger btn-sm">
+                                                    <a href="/admin/blockBrand?id=<%= data[i]._id %>" class="text-white" style="text-decoration: none;">Block</a>
+                                                </button>
+                                            <% } else { %>
+                                                <button class="btn btn-success btn-sm">
+                                                    <a href="/admin/unblockBrand?id=<%= data[i]._id %>" class="text-white" style="text-decoration: none;">Unblock</a>
+                                                </button>
+                                            <% } %>
+                                            <button class="btn btn-warning btn-sm">
+                                                <a href="/admin/editBrand?id=<%= data[i]._id %>" class="text-white" style="text-decoration: none;">Edit</a>
+                                            </button>
+                                        </div> -->
+                                        <!-- <small class="text-muted d-block mt-2">
+                                            Created: <%= new Date(data[i].createdAt).toLocaleDateString() %>
+                                        </small> -->
+                                    </div>
+                                </div>
+                            </div>
+                        <% } %>
+                    <% } else { %>
+                        <div class="col-12 text-center">
+                            <p>No brands found</p>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        <!-- <div class="row mt-4">
+            <div class="col-12">
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item <%= parseInt(currentPage) === 1 ? 'disabled' : '' %>">
+                            <a class="page-link" href="?page=<%= parseInt(currentPage) - 1 %>&search=<%= search %>">&laquo;</a>
+                        </li>
+                        <% for (let i = 1; i <= totalPages; i++) { %>
+                            <li class="page-item <%= (parseInt(currentPage) === i) ? 'active' : '' %>">
+                                <a class="page-link" href="?page=<%= i %>&search=<%= search %>"><%= i %></a>
+                            </li>
+                        <% } %>
+                        <li class="page-item <%= parseInt(currentPage) === totalPages ? 'disabled' : '' %>">
+                            <a class="page-link" href="?page=<%= parseInt(currentPage) + 1 %>&search=<%= search %>">&raquo;</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div> -->
+</section>
+
+<%- include("../../views/partials/user/footer") %>

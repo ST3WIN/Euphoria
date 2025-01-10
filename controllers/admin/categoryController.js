@@ -89,7 +89,7 @@ const removeCategoryOffer = async (req, res) => {
         if (products.length > 0) {
             for (const product of products) {
                 product.salePrice = product.oldPrice
-                await prodect.save();
+                await product.save();
             }
         }
   
@@ -125,7 +125,6 @@ const unlistCategory = async(req,res)=>{
 }
 
 const loadEditCategory = async(req,res)=>{
-    console.log("load edit page");
     try {
       const id = req.query.id;
       const category= await Category.findOne({_id:id});
