@@ -1,0 +1,126 @@
+<%- include("../../views/partials/user/header.ejs") %>
+<style>
+    .errorMessage {
+        color: red;
+        font-size: 0.75rem;
+        display: none;
+    }
+    .btn {
+        background-color: #007bff;
+        color: #fff;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+    .btn:hover {
+        background-color: #0056b3;
+    }
+    .verify-container {
+        margin-top: 20px;
+        text-align: center;
+    }
+</style>
+
+<div class="container" style="margin-bottom: 30px;">
+    <div class="row">
+        <div class="col-12 col-sm-12 col-md-6 col-lg-6 main-col offset-md-3">
+            <div class="mb-4">
+                <form method="post" id="forgotPasswordForm" class="contact-form">
+                    <div class="row">
+                        <div class="col-12 col-sm-12 col-md-12 col-lg-12">
+                            <div class="form-group">
+                                <label for="email">Email</label>
+                                <input
+                                    type="email"
+                                    name="email"
+                                    placeholder="Enter your email"
+                                    id="email"
+                                    autocorrect="off"
+                                    autocapitalize="off"
+                                    autofocus=""
+                                />
+                                <div id="emailError" class="errorMessage"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="messageContainer" class="text text-danger text-center"></div>
+                    <div class="row verify-container">
+                        <div class="col-12">
+                            <button type="submit" class="btn">Verify</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const emailInput = document.getElementById("email");
+    const emailError = document.getElementById("emailError");
+    const messageContainer = document.getElementById("messageContainer");
+    const forgotPasswordForm = document.getElementById("forgotPasswordForm");
+
+    function validateEmail() {
+        const emailVal = emailInput.value;
+        const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+        if (emailVal.trim() === "") {
+            emailError.style.display = "block";
+            emailError.innerHTML = "Email cannot be empty";
+            return false;
+        } else if (!emailPattern.test(emailVal)) {
+            emailError.style.display = "block";
+            emailError.innerHTML = "Invalid Email Format";
+            return false;
+        } else {
+            emailError.style.display = "none";
+            emailError.innerHTML = "";
+            return true;
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        forgotPasswordForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            emailError.style.display = "none";
+            const isEmailValid = validateEmail();
+
+            if (isEmailValid) {
+                try {
+                    const response = await fetch('/change-email', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            email: emailInput.value
+                        })
+                    });
+
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        // If successful, redirect to OTP page
+                        window.location.href = data.redirectUrl;
+                    } else {
+                        // Show error message
+                        messageContainer.innerHTML = data.message;
+                        messageContainer.style.display = 'block';
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    messageContainer.innerHTML = 'Something went wrong. Please try again.';
+                    messageContainer.style.display = 'block';
+                }
+            }
+        });
+
+        emailInput.addEventListener("blur", validateEmail);
+    });
+</script>
+
+<%- include("../../views/partials/user/footer.ejs") %>
+
+

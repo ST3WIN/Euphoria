@@ -79,7 +79,7 @@
                                         <div class="shop__sidebar__categories">
                                             <ul class="nice-scroll">
                                                 <%for(let i=0;i<category.length;i++){%>
-                                                <li><a href="/filter?category=<%=category[i]._id%>"><%=category[i].name%></a></li>
+                                                <li><a href="/shop?category=<%=category[i]._id%><%= selectedBrand ? '&brand=' + selectedBrand : '' %><%= selectedMinPrice ? '&gt=' + selectedMinPrice : '' %><%= selectedMaxPrice ? '&lt=' + selectedMaxPrice : '' %>"><%=category[i].name%></a></li>
                                                 <%}%>
                                             </ul>
                                         </div>
@@ -95,7 +95,7 @@
                                         <div class="shop__sidebar__brand">
                                             <ul>
                                                 <%for(let i=0;i<brand.length;i++){%>
-                                                    <li><a href="/filter?brand=<%=brand[i]._id%>"><%=brand[i].brandName%></a></li>
+                                                    <li><a href="/shop?brand=<%=brand[i]._id%><%= selectedCategory ? '&category=' + selectedCategory : '' %><%= selectedMinPrice ? '&gt=' + selectedMinPrice : '' %><%= selectedMaxPrice ? '&lt=' + selectedMaxPrice : '' %>"><%=brand[i].brandName%></a></li>
                                                     <%}%>
                                             </ul>
                                         </div>
@@ -110,10 +110,10 @@
                                     <div class="card-body">
                                         <div class="shop__sidebar__price">
                                             <ul>
-                                                <li><a href="/filterPrice?gt=0&lt=10000">Under ₹10,000</a></li>
-                                                <li><a href="/filterPrice?gt=10000&lt=15000">Under ₹15,000</a></li>
-                                                <li><a href="/filterPrice?gt=15000&lt=20000">Under ₹20,000</a></li>
-                                                <li><a href="/filterPrice?gt=20000&lt=30000">Under ₹30,000</a></li>
+                                                <li><a href="/shop?gt=<%= selectedMinPrice || 0 %>&lt=<%= selectedMaxPrice || 10000 %><%= selectedCategory ? '&category=' + selectedCategory : '' %><%= selectedBrand ? '&brand=' + selectedBrand : '' %>">Under ₹10,000</a></li>
+                                                <li><a href="/shop?gt=<%= selectedMinPrice || 10000 %>&lt=<%= selectedMaxPrice || 15000 %><%= selectedCategory ? '&category=' + selectedCategory : '' %><%= selectedBrand ? '&brand=' + selectedBrand : '' %>">Under ₹15,000</a></li>
+                                                <li><a href="/shop?gt=<%= selectedMinPrice || 15000 %>&lt=<%= selectedMaxPrice || 20000 %><%= selectedCategory ? '&category=' + selectedCategory : '' %><%= selectedBrand ? '&brand=' + selectedBrand : '' %>">Under ₹20,000</a></li>
+                                                <li><a href="/shop?gt=<%= selectedMinPrice || 20000 %>&lt=<%= selectedMaxPrice || 30000 %><%= selectedCategory ? '&category=' + selectedCategory : '' %><%= selectedBrand ? '&brand=' + selectedBrand : '' %>">Under ₹30,000</a></li>
                                             </ul>
                                         </div>
                                     </div>

@@ -309,6 +309,155 @@ const postNewPassword = async(req,res)=>{
     }
 }
 
+const changeEmail = async(req,res)=>{
+    try {
+        res.render("change-email")
+    } catch (error) {
+        console.log("Change email error",error)
+        res.redirect("/pageNotFound")
+    }
+}
+
+const changeEmailValid = async(req,res)=>{
+    try {
+        const { email } = req.body;
+        const findUser = await User.findOne({ email: email });
+        if (!findUser) {
+            return res.json({
+                success: false,
+                message: "Invalid email"
+            });
+        }
+        const otp = generateOtp();
+        req.session.userOtp = otp;  
+        console.log('OTP stored in session:', req.session.userOtp);
+        
+        const emailSent = await sendVerificationEmail(email, otp);
+        
+        if (emailSent) {
+            req.session.email = email;
+            req.session.userData = req.body
+            return res.json({
+                success: true,
+                message: "OTP sent successfully",
+                redirectUrl: '/change-email-otp'
+            });
+        }
+        return res.json({
+            success: false,
+            message: "Failed to send OTP. Please try again."
+        });
+        
+    } catch (error) {
+        console.error("Change Email error", error);
+        return res.json({
+            success: false,
+            message: "Something went wrong. Please try again."
+        });
+    }
+}
+
+const verifyEmailOTP = async(req, res)=>{
+    try {
+        if (!req.session.userOtp) {
+            return res.redirect('/change-email');
+        }
+        res.render("change-email-otp");
+    } catch (error) {
+        console.log("verifyEmailOTP error",error)
+        return res.redirect('/changeEmail');
+    }
+    
+}
+
+const verifyEmailOtp = async(req,res)=>{
+    try {
+        const enteredOtp = req.body.otp;
+        console.log('Entered OTP by user:', enteredOtp);
+        console.log('OTP stored in session:', req.session.userOtp);
+        
+        if(enteredOtp === req.session.userOtp) { // Use strict equality
+            res.json({
+                success: true,
+                redirectUrl: "/new-email"
+            });
+        } else {
+            res.json({
+                success: false,
+                message: "Invalid OTP"
+            });
+        }
+    } catch (error) {
+        console.log("Error in verifying otp", error);
+        res.status(500).json({
+            success: false,
+            message: "An error occurred please try again"
+        }); 
+    }
+}
+
+const newEmail = async(req,res)=>{
+    try {
+        if (!req.session.userOtp) {
+            return res.redirect('/change-email-otp');
+        }
+        res.render("new-email");
+    } catch (error) {
+        console.log("verifyEmailOTP error",error)
+        return res.redirect('/changeEmail');
+    }
+}
+
+const updateEmail = async (req, res) => {
+    try {
+        // Check if user is logged in
+        if (!req.session.user) {
+            return res.status(401).json({
+                success: false,
+                message: 'Please login to continue'
+            });
+        }
+
+        const newEmail = req.body.email;
+        const userId = req.session.user;
+
+        // Basic email validation
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (!emailRegex.test(newEmail)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid email format'
+            });
+        }
+
+        // Check if email already exists
+        const existingUser = await User.findOne({ email: newEmail });
+        if (existingUser && existingUser._id.toString() !== userId) {
+            return res.status(400).json({
+                success: false,
+                message: 'Email already in use'
+            });
+        }
+
+        // Update email
+        await User.findByIdAndUpdate(userId, { email: newEmail });
+
+        // Send success response
+        return res.status(200).json({
+            success: true,
+            message: 'Email updated successfully',
+            redirectUrl: '/userProfile'
+        });
+
+    } catch (error) {
+        console.error("Update email error:", error);
+        return res.status(500).json({
+            success: false,
+            message: 'Something went wrong. Please try again.'
+        });
+    }
+}
+
 module.exports = {
     getForgotpage,
     userProfile,
@@ -317,5 +466,11 @@ module.exports = {
     verifyForgotPassOTP,
     getResetPasswordPage,
     resendOtp,
-    postNewPassword
+    postNewPassword,
+    changeEmail,
+    changeEmailValid,
+    verifyEmailOTP,
+    verifyEmailOtp,
+    newEmail,
+    updateEmail
 }

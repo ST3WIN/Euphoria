@@ -12,10 +12,10 @@ router.get("/pageNotFound",userController.pageNotFound)
 
 //Homepage & Shop page
 router.get("/",userController.loadHomePage)
-router.get("/shop",userController.loadShopPage)
-router.get("/filter",userController.filterProduct)
-router.get("/filterPrice",userController.filterByPrice)
-router.post("/search",userController.searchProducts)
+router.get('/shop', userController.loadShopPage);
+router.get('/filter', userController.loadShopPage);
+router.get('/filterPrice', userController.loadShopPage);
+router.post('/search', userController.loadShopPage);
 
 
 //Sign up
@@ -57,7 +57,12 @@ router.post("/verify-forgotPasswordOtp",profileController.verifyForgotPassOTP)
 router.get("/reset-password",profileController.getResetPasswordPage)
 router.post("/resend-forgot-otp",profileController.resendOtp)
 router.post("/reset-password",profileController.postNewPassword)
-// router.get("/change-email",auth.userAuth,profileController.changeEmail)
+router.get("/change-email",auth.userAuth,profileController.changeEmail)
+router.post("/change-email",auth.userAuth,profileController.changeEmailValid)
+router.get("/change-email-otp",profileController.verifyEmailOTP)
+router.post("/verify-email-otp",auth.userAuth,profileController.verifyEmailOtp)
+router.get("/new-email",auth.userAuth,profileController.newEmail)
+router.post("/update-email",profileController.updateEmail)
 
 //Cart management
 router.get("/cart",auth.userAuth,cartController.loadCart)
