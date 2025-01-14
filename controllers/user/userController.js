@@ -20,7 +20,7 @@ const loadHomePage = async(req,res)=>{
         const user = req.session.user
         const categories = await Category.find({isListed:true})
         let productData = await Product.find({isBlocked:false,category:{$in:categories.map(category=>category._id)},
-        quantity:{$gt:0}}).limit(7) 
+        quantity:{$gte:0}}).limit(7) 
         productData.sort((a,b)=>new Date(b.createdOn-new Date(a.createdOn)))
         // productData = productData.slice(0,4)
         console.log("Session User:", req.session.user);
@@ -326,7 +326,7 @@ const loadShopPage = async (req, res) => {
         // Build filter query
         const query = {
             isBlocked: false,
-            quantity: { $gt: 0 }
+            quantity: { $gte: 0 }
         };
 
         // Handle category filter

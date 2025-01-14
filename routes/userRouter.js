@@ -64,7 +64,21 @@ router.post("/verify-email-otp",auth.userAuth,profileController.verifyEmailOtp)
 router.get("/new-email",auth.userAuth,profileController.newEmail)
 router.post("/update-email",profileController.updateEmail)
 
+//Address management
+router.post("/addAddress",auth.userAuth,profileController.postAddAddress)
+router.post("/editAddress",auth.userAuth,profileController.postEditAddress)
+router.get("/editAddress",auth.userAuth,profileController.editAddress)
+router.get("/deleteAddress",auth.userAuth,profileController.deleteAddress)
+
+
 //Cart management
-router.get("/cart",auth.userAuth,cartController.loadCart)
+router.post('/add-to-cart', auth.apiAuth,cartController.addToCart);
+router.get('/cart',auth.userAuth, cartController.getCart);
+router.post('/update-cart',auth.apiAuth, cartController.updateQuantity);
+router.post('/remove-from-cart',auth.apiAuth, cartController.removeFromCart);
+
+// router.get("*",(req,res)=>{
+//     res.redirect("/pageNotFound")
+// })
 
 module.exports = router

@@ -253,7 +253,7 @@
                                             <span class="fa fa-star checked"></span>
                                             <span class="fa fa-star checked"></span>
                                             <span class="fa fa-star checked"></span>
-                                            <span class="fa fa-star-half checked"></span>
+                                            <span class="fa fa-star-half checked"></span> <%if(products[i].quantity==0){%> <p style="color: red;">Out of stock!</p> <%}%>
                                 </div>
                                 <div style="display: flex; gap: 10px; align-items: center;">
                                     <% if (products[i].salePrice === products[i].regularPrice) { %>

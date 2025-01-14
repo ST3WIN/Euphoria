@@ -1,4 +1,5 @@
 const User = require("../../models/userSchema")
+const Address = require("../../models/addressSchema")
 const nodemailer = require("nodemailer")
 const bcrypt = require("bcrypt")
 const env = require("dotenv").config()
@@ -155,9 +156,12 @@ const getForgotpage = async(req,res)=>{
 
 const userProfile = async(req,res)=>{
     try {
-        const user = req.session.user || null
+        const userId = req.session.user || null
+        const userData = await User.findById(userId)
+        const addressData = await Address.findOne({userId:userId})
         res.render("userProfile",{
-            user:user
+            user:userId,
+            userAddress:addressData
         })
     } catch (error) {
         res.redirect("/page-404")
@@ -458,6 +462,139 @@ const updateEmail = async (req, res) => {
     }
 }
 
+const postAddAddress = async(req,res)=>{
+    try {
+        const userId = req.session.user
+        const userData = await User.findOne({_id:userId})
+        const {addressType, name, place, city, state, pincode, phone, altPhone} = req.body
+
+        const userAddress = await Address.findOne({userId: userData._id})
+        
+        if(!userAddress){
+            const newAddress = new Address({
+                userId: userData._id,
+                address: [{
+                    addressType,
+                    name,
+                    place,
+                    city,
+                    state,
+                    pincode: Number(pincode),
+                    phone,
+                    altPhone
+                }]
+            })
+            await newAddress.save()
+        } else {
+            userAddress.address.push({
+                addressType,
+                name,
+                place,
+                city,
+                state,
+                pincode: Number(pincode),
+                phone,
+                altPhone
+            })
+            await userAddress.save()
+        }
+        res.json({ success: true, message: 'Address added successfully!' });
+    } catch (error) {
+        console.log("Add address error", error)
+        res.json({ success: false, message: 'Failed to add address. Please try again.' });
+    }
+}
+
+const editAddress = async(req,res)=>{
+    try {
+        const addressId = req.query.id
+        const user = req.session.user
+        const currAddress = await Address.findOne({
+            "address._id":addressId
+        })
+
+        if(!currAddress){
+            return res.redirect("/pageNotFound")
+        }
+        const addressData = currAddress.address.find((item)=>{
+            return item._id.toString()===addressId.toString()
+        })
+        if(!addressData){
+            return res.redirect("/pageNotFound")
+        }
+        res.render("editAddress",{address:addressData,user:user})
+    } catch (error) {
+        console.error("Error in get edit address page",error)
+        res.redirect("/pageNotFound")        
+    }
+}
+
+const postEditAddress = async (req, res) => {
+    try {
+        const data = req.body;
+        const addressId = data.addressId; // Changed from req.query.id to req.body.addressId
+        const userId = req.session.user._id;
+
+        // Input validation
+        if (!addressId || !data.addressType || !data.name || !data.place || !data.city || !data.state || !data.pincode || !data.phone || !data.altPhone) {
+            return res.status(400).json({ success: false, message: "All fields are required" });
+        }
+
+        const result = await Address.updateOne(
+            { userId: userId, "address._id": addressId },
+            {
+                $set: {
+                    "address.$": {
+                        _id: addressId,
+                        addressType: data.addressType,
+                        name: data.name,
+                        place: data.place,
+                        city: data.city,
+                        state: data.state,
+                        pincode: data.pincode,
+                        phone: data.phone,
+                        altPhone: data.altPhone
+                    }
+                }
+            }
+        );
+
+        if (result.nModified === 0) {
+            return res.status(404).json({ success: false, message: "Address not found or not modified" });
+        }
+
+        res.status(200).json({ success: true, message: "Address updated successfully" });
+    } catch (error) {
+        console.error("Error in edit address:", error);
+        res.status(500).json({ success: false, message: "An error occurred while updating the address" });
+    }
+}
+
+const deleteAddress = async(req,res)=>{
+    try {
+       const addressId = req.query.id
+       const findAddress = await Address.findOne({"address._id":addressId})
+       if(!findAddress){
+        return res.status(404).send("Address not found")
+       }
+       await Address.updateOne({
+        "address._id":addressId
+       },
+       {
+        $pull:{
+            address:{
+                _id:addressId,
+            }
+        }
+       }
+    )
+    res.redirect("/userProfile")
+    } catch (error) {
+        console.error("Error in delete address",error)
+        res.redirect("/pageNotFound")
+    }
+}
+
 module.exports = {
     getForgotpage,
     userProfile,
@@ -472,5 +609,9 @@ module.exports = {
     verifyEmailOTP,
     verifyEmailOtp,
     newEmail,
-    updateEmail
+    updateEmail,
+    postAddAddress,
+    editAddress,
+    postEditAddress,
+    deleteAddress
 }

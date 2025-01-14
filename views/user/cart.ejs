@@ -1,4 +1,38 @@
 <%- include("../../views/partials/user/header.ejs") %>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    // Check if user is logged in on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        fetch('/cart')
+        .then(response => {
+            if (!response.ok) {
+                if (response.status === 401) {
+                    Swal.fire({
+                        title: 'Login Required',
+                        text: 'Please login to view your cart',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Login',
+                        cancelButtonText: 'Cancel'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.location.href = '/login';
+                        } else {
+                            window.location.href = '/';
+                        }
+                    });
+                    throw new Error('Login required');
+                }
+                throw new Error('Network response was not ok');
+            }
+            return response.text();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    });
+</script>
+
 <section class="breadcrumb-option">
     <div class="container">
         <div class="row">
@@ -33,120 +67,168 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td class="product__cart__item">
-                                    <div class="product__cart__item__pic">
-                                        <img src="img/shopping-cart/cart-1.jpg" alt="">
-                                    </div>
-                                    <div class="product__cart__item__text">
-                                        <h6>T-shirt Contrast Pocket</h6>
-                                        <h5>$98.49</h5>
-                                    </div>
-                                </td>
-                                <td class="quantity__item">
-                                    <div class="quantity">
-                                        <div class="pro-qty-2">
-                                            <input type="text" value="1">
+                            <% if (cartItems && cartItems.length > 0) { %>
+                                <% cartItems.forEach(item => { %>
+                                    <tr>
+                                        <td class="product__cart__item">
+                                            <div class="product__cart__item__pic">
+                                                <img src="/uploads/re-image/<%= item.productId.productImage[0] %>" alt="<%= item.productId.productName %>" style="max-width: 90px;">
+                                            </div>
+                                            <div class="product__cart__item__text">
+                                                <h6><%= item.productId.productName %></h6>
+                                                <h5>₹<%= item.price.toLocaleString('en-IN') %></h5>
+                                            </div>
+                                        </td>
+                                        <td class="quantity__item">
+                                            <div class="quantity">
+                                                <div class="pro-qty-2">
+                                                    <input type="number" 
+                                                           value="<%= item.quantity %>" 
+                                                           min="1" 
+                                                           max="5"
+                                                           onchange="updateQuantity('<%= item.productId._id %>', this.value)"
+                                                           style="width: 60px; padding: 5px;">
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="cart__price">₹<%= item.totalPrice.toLocaleString('en-IN') %></td>
+                                        <td class="cart__close">
+                                            <i class="fa fa-close" onclick="removeFromCart('<%= item.productId._id %>')"></i>
+                                        </td>
+                                    </tr>
+                                <% }); %>
+                            <% } else { %>
+                                <tr>
+                                    <td colspan="4" class="text-center">
+                                        <p>Your cart is empty</p>
+                                        <div class="continue__btn" style="margin-top: 20px;">
+                                            <a href="/shop">Continue Shopping</a>
                                         </div>
-                                    </div>
-                                </td>
-                                <td class="cart__price">$ 30.00</td>
-                                <td class="cart__close"><i class="fa fa-close"></i></td>
-                            </tr>
-                            <tr>
-                                <td class="product__cart__item">
-                                    <div class="product__cart__item__pic">
-                                        <img src="img/shopping-cart/cart-2.jpg" alt="">
-                                    </div>
-                                    <div class="product__cart__item__text">
-                                        <h6>Diagonal Textured Cap</h6>
-                                        <h5>$98.49</h5>
-                                    </div>
-                                </td>
-                                <td class="quantity__item">
-                                    <div class="quantity">
-                                        <div class="pro-qty-2">
-                                            <input type="text" value="1">
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="cart__price">$ 32.50</td>
-                                <td class="cart__close"><i class="fa fa-close"></i></td>
-                            </tr>
-                            <tr>
-                                <td class="product__cart__item">
-                                    <div class="product__cart__item__pic">
-                                        <img src="img/shopping-cart/cart-3.jpg" alt="">
-                                    </div>
-                                    <div class="product__cart__item__text">
-                                        <h6>Basic Flowing Scarf</h6>
-                                        <h5>$98.49</h5>
-                                    </div>
-                                </td>
-                                <td class="quantity__item">
-                                    <div class="quantity">
-                                        <div class="pro-qty-2">
-                                            <input type="text" value="1">
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="cart__price">$ 47.00</td>
-                                <td class="cart__close"><i class="fa fa-close"></i></td>
-                            </tr>
-                            <tr>
-                                <td class="product__cart__item">
-                                    <div class="product__cart__item__pic">
-                                        <img src="img/shopping-cart/cart-4.jpg" alt="">
-                                    </div>
-                                    <div class="product__cart__item__text">
-                                        <h6>Basic Flowing Scarf</h6>
-                                        <h5>$98.49</h5>
-                                    </div>
-                                </td>
-                                <td class="quantity__item">
-                                    <div class="quantity">
-                                        <div class="pro-qty-2">
-                                            <input type="text" value="1">
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="cart__price">$ 30.00</td>
-                                <td class="cart__close"><i class="fa fa-close"></i></td>
-                            </tr>
+                                    </td>
+                                </tr>
+                            <% } %>
                         </tbody>
                     </table>
                 </div>
-                <div class="row">
-                    <div class="col-lg-6 col-md-6 col-sm-6">
-                        <div class="continue__btn">
-                            <a href="#">Continue Shopping</a>
+                <% if (cartItems && cartItems.length > 0) { %>
+                    <div class="row">
+                        <div class="col-lg-6 col-md-6 col-sm-6">
+                            <div class="continue__btn">
+                                <a href="/shop">Continue Shopping</a>
+                            </div>
                         </div>
                     </div>
-                    <div class="col-lg-6 col-md-6 col-sm-6">
-                        <div class="continue__btn update__btn">
-                            <a href="#"><i class="fa fa-spinner"></i> Update cart</a>
-                        </div>
+                <% } %>
+            </div>
+            <% if (cartItems && cartItems.length > 0) { %>
+                <div class="col-lg-4">
+                    <div class="cart__total">
+                        <h6>Cart total</h6>
+                        <ul>
+                            <li>Subtotal <span>₹<%= subtotal.toLocaleString('en-IN') %></span></li>
+                            <li>Total <span>₹<%= total.toLocaleString('en-IN') %></span></li>
+                        </ul>
+                        <a href="/checkout" class="primary-btn">Proceed to checkout</a>
                     </div>
                 </div>
-            </div>
-            <div class="col-lg-4">
-                <div class="cart__discount">
-                    <h6>Discount codes</h6>
-                    <form action="#">
-                        <input type="text" placeholder="Coupon code">
-                        <button type="submit">Apply</button>
-                    </form>
-                </div>
-                <div class="cart__total">
-                    <h6>Cart total</h6>
-                    <ul>
-                        <li>Subtotal <span>$ 169.50</span></li>
-                        <li>Total <span>$ 169.50</span></li>
-                    </ul>
-                    <a href="#" class="primary-btn">Proceed to checkout</a>
-                </div>
-            </div>
+            <% } %>
         </div>
     </div>
 </section>
 <%- include("../../views/partials/user/footer.ejs") %>
+
+<script>
+    function updateQuantity(productId, quantity) {
+        quantity = parseInt(quantity);
+        
+        if (isNaN(quantity) || quantity < 1) {
+            Swal.fire({
+                title: 'Invalid Quantity',
+                text: 'Please enter a valid quantity (minimum 1)',
+                icon: 'error'
+            });
+            return;
+        }
+
+        if (quantity > 5) {
+            Swal.fire({
+                title: 'Quantity Limit Exceeded',
+                text: 'Maximum quantity allowed is 5 per product',
+                icon: 'warning'
+            });
+            quantity = 5;
+        }
+
+        fetch('/update-cart', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                productId: productId,
+                quantity: quantity
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                throw new Error(data.message || 'Failed to update cart');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Swal.fire({
+                title: 'Error!',
+                text: error.message || 'Failed to update cart',
+                icon: 'error'
+            });
+        });
+    }
+
+    function removeFromCart(productId) {
+        Swal.fire({
+            title: 'Remove Item',
+            text: 'Are you sure you want to remove this item from cart?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, remove it!',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch('/remove-from-cart', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        productId: productId
+                    })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        throw new Error(data.message || 'Failed to remove item from cart');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    Swal.fire({
+                        title: 'Error!',
+                        text: error.message || 'Failed to remove item from cart',
+                        icon: 'error'
+                    });
+                });
+            }
+        });
+    }
+</script>

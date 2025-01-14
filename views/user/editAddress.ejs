@@ -1,0 +1,201 @@
+<%- include("../../views/partials/user/header.ejs") %>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Address</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="/styles/userProfile.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container my-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Edit Address</h5>
+                        <form onsubmit="return validateEditAddressForm(event)">
+                            <input type="hidden" name="addressId" value="<%= address._id %>">
+                            
+                            <div class="mb-3">
+                                <label for="addressType" class="form-label">Address Type*</label>
+                                <input type="text" id="addressType" name="addressType" class="form-control" value="<%= address.addressType %>" required>
+                                <div class="invalid-feedback" id="addressTypeError">Address type is required</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Full Name*</label>
+                                <input type="text" id="name" name="name" class="form-control" value="<%= address.name %>" required>
+                                <div class="invalid-feedback" id="nameError">Name is required</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="place" class="form-label">Place/Street Address*</label>
+                                <input type="text" id="place" name="place" class="form-control" value="<%= address.place %>" required>
+                                <div class="invalid-feedback" id="placeError">Place is required</div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col">
+                                    <label for="city" class="form-label">City*</label>
+                                    <input type="text" id="city" name="city" class="form-control" value="<%= address.city %>" required>
+                                    <div class="invalid-feedback" id="cityError">City is required</div>
+                                </div>
+                                <div class="col">
+                                    <label for="state" class="form-label">State*</label>
+                                    <input type="text" id="state" name="state" class="form-control" value="<%= address.state %>" required>
+                                    <div class="invalid-feedback" id="stateError">State is required</div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="pincode" class="form-label">PIN Code*</label>
+                                <input type="text" id="pincode" name="pincode" class="form-control" value="<%= address.pincode %>" maxlength="6" required>
+                                <div class="invalid-feedback" id="pincodeError">PIN code must be exactly 6 digits</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="phone" class="form-label">Phone Number*</label>
+                                <input type="tel" id="phone" name="phone" class="form-control" value="<%= address.phone %>" maxlength="10" required>
+                                <div class="invalid-feedback" id="phoneError">Phone number must be exactly 10 digits</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="altPhone" class="form-label">Alternative Phone Number*</label>
+                                <input type="tel" id="altPhone" name="altPhone" class="form-control" value="<%= address.altPhone %>" maxlength="10" required>
+                                <div class="invalid-feedback" id="altPhoneError">Alternative phone number must be exactly 10 digits and different from primary phone</div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                            <a href="/userProfile" class="btn btn-outline-secondary">Cancel</a>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        function validateEditAddressForm(event) {
+            event.preventDefault();
+            let isValid = true;
+            const form = event.target;
+            
+            // Reset previous error states
+            const errorElements = form.getElementsByClassName('invalid-feedback');
+            const inputs = form.getElementsByTagName('input');
+            
+            for(let element of errorElements) {
+                element.style.display = 'none';
+            }
+            for(let input of inputs) {
+                input.classList.remove('is-invalid');
+            }
+        
+            // Validation functions
+            const validateField = (fieldName, errorId, validationFn) => {
+                const field = form[fieldName];
+                const value = field.value.trim();
+                if (!validationFn(value)) {
+                    document.getElementById(errorId).style.display = 'block';
+                    field.classList.add('is-invalid');
+                    return false;
+                }
+                return true;
+            };
+        
+            // Address Type Validation
+            isValid = validateField('addressType', 'addressTypeError', value => value !== '') && isValid;
+        
+            // Name Validation
+            isValid = validateField('name', 'nameError', value => value !== '') && isValid;
+        
+            // Place Validation
+            isValid = validateField('place', 'placeError', value => value !== '') && isValid;
+        
+            // City Validation
+            isValid = validateField('city', 'cityError', value => value !== '') && isValid;
+        
+            // State Validation
+            isValid = validateField('state', 'stateError', value => value !== '') && isValid;
+        
+            // Pincode Validation
+            isValid = validateField('pincode', 'pincodeError', value => /^\d{6}$/.test(value)) && isValid;
+        
+            // Phone Validation
+            isValid = validateField('phone', 'phoneError', value => /^\d{10}$/.test(value)) && isValid;
+        
+            // Alternative Phone Validation
+            isValid = validateField('altPhone', 'altPhoneError', value => {
+                if (!/^\d{10}$/.test(value)) return false;
+                if (value === form.phone.value.trim()) {
+                    document.getElementById('altPhoneError').textContent = 'Alternative phone number must be different from primary phone';
+                    return false;
+                }
+                return true;
+            }) && isValid;
+        
+            if (isValid) {
+                submitForm(form);
+            }
+        
+            return false;
+        }
+        
+        function submitForm(form) {
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+        
+            fetch('/editAddress', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        title: 'Success!',
+                        text: data.message,
+                        icon: 'success',
+                        confirmButtonColor: '#e53637'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.location.href = '/userProfile';
+                        }
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Error!',
+                        text: data.message,
+                        icon: 'error',
+                        confirmButtonColor: '#e53637'
+                    });
+                }
+            })
+            .catch(error => {
+                Swal.fire({
+                    title: 'Error!',
+                    text: 'Something went wrong. Please try again.',
+                    icon: 'error',
+                    confirmButtonColor: '#e53637'
+                });
+            });
+        }
+        
+        function showLoading() {
+            Swal.fire({
+                title: 'Updating Address...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/addressValidation.js"></script>
+</body>
+<%- include("../../views/partials/user/footer.ejs") %>

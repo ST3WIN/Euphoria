@@ -24,10 +24,6 @@ const addressSchema = new Schema({
             type:String,
             required:true
         },
-        district:{
-            type:String,
-            required:true
-        },
         state:{
             type:String,
             required:true
@@ -37,6 +33,10 @@ const addressSchema = new Schema({
             required:true
         },
         phone:{
+            type:String,
+            required:true
+        },
+        altPhone:{
             type:String,
             required:true
         }
