@@ -13,10 +13,8 @@ router.get("/pageNotFound",userController.pageNotFound)
 //Homepage & Shop page
 router.get("/",userController.loadHomePage)
 router.get('/shop', userController.loadShopPage);
-router.get('/filter', userController.loadShopPage);
-router.get('/filterPrice', userController.loadShopPage);
-router.post('/search', userController.loadShopPage);
-
+router.get('/shop/:filter?', userController.loadShopPage);
+router.get('/shop/:filter?/:search?', userController.loadShopPage);
 
 //Sign up
 router.get("/signup",userController.loadSignup)

@@ -27,6 +27,44 @@
             color: white;
             border-color: #000;
         }
+
+        .filter-active {
+            color: #5b5b5b !important;
+            font-weight: bold;
+        }
+
+        .clear-filters {
+            display: inline-block;
+            padding: 8px 15px;
+            background-color: #5b5b5b;
+            color: rgb(255, 255, 255);
+            text-decoration: none;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            transition: background-color 0.3s;
+        }
+
+        .clear-filters:hover {
+            background-color: #d32f2f;
+            color: white;
+        }
+
+        .active-filter-summary {
+            margin: 15px 0;
+            padding: 10px;
+            background-color: #5b5b5b;
+            border-radius: 4px;
+        }
+
+        .active-filter-summary span {
+            display: inline-block;
+            margin: 3px;
+            padding: 5px 10px;
+            background-color: #5b5b5b;
+            color: white;
+            border-radius: 15px;
+            font-size: 0.9em;
+        }
     </style>
 </head>
 <%- include("../../views/partials/user/header.ejs") %>
@@ -46,23 +84,65 @@
     </div>
 </section>
 <!-- Breadcrumb Section End -->
-
 <!-- Shop Section Begin -->
 <section class="shop spad">
     <div class="container">
         <div class="row">
             <div class="col-lg-3">
                 <div class="shop__sidebar">
+                    <% if (selectedCategory || selectedBrand || selectedMinPrice || selectedMaxPrice || searchQuery || (selectedSort && selectedSort !== 'default')) { %>
+                        <div class="text-center mb-4">
+                            <a href="/shop" class="clear-filters">
+                                <i class="fa fa-times"></i> Clear All Filters
+                            </a>
+                        </div>
+                        <!-- Active Filters Summary -->
+                        <div class="active-filter-summary">
+                            <% if (searchQuery) { %>
+                                <span>Search: <%= searchQuery %></span>
+                            <% } %>
+                            <% if (selectedCategory) { %>
+                                <% const catName = category.find(cat => cat._id.toString() === selectedCategory)?.name %>
+                                <% if (catName) { %>
+                                    <span>Category: <%= catName %></span>
+                                <% } %>
+                            <% } %>
+                            <% if (selectedBrand) { %>
+                                <% const brandName = brand.find(b => b._id.toString() === selectedBrand)?.brandName %>
+                                <% if (brandName) { %>
+                                    <span>Brand: <%= brandName %></span>
+                                <% } %>
+                            <% } %>
+                            <% if (selectedMinPrice && selectedMaxPrice) { %>
+                                <span>Price: ₹<%= selectedMinPrice %> - ₹<%= selectedMaxPrice %></span>
+                            <% } %>
+                            <% if (selectedSort && selectedSort !== 'default') { %>
+                                <span>Sort: <%= selectedSort.replace('-', ' ').toUpperCase() %></span>
+                            <% } %>
+                        </div>
+                    <% } %>
                     <div class="shop__sidebar__search">
-                        <form action="/search" method="POST">
+                        <form action="/shop" method="GET">
                             <input 
                                 type="text" 
-                                name="query" 
+                                name="search" 
                                 placeholder="Search..." 
                                 value="<%= locals.searchQuery || '' %>"
                                 minlength="1"
-                                required
                             >
+                            <!-- Preserve other filters when searching -->
+                            <% if (selectedCategory) { %>
+                                <input type="hidden" name="category" value="<%= selectedCategory %>">
+                            <% } %>
+                            <% if (selectedBrand) { %>
+                                <input type="hidden" name="brand" value="<%= selectedBrand %>">
+                            <% } %>
+                            <% if (selectedMinPrice) { %>
+                                <input type="hidden" name="minPrice" value="<%= selectedMinPrice %>">
+                            <% } %>
+                            <% if (selectedMaxPrice) { %>
+                                <input type="hidden" name="maxPrice" value="<%= selectedMaxPrice %>">
+                            <% } %>
                             <button type="submit">
                                 <span class="icon_search"></span>
                             </button>
@@ -79,7 +159,12 @@
                                         <div class="shop__sidebar__categories">
                                             <ul class="nice-scroll">
                                                 <%for(let i=0;i<category.length;i++){%>
-                                                <li><a href="/shop?category=<%=category[i]._id%><%= selectedBrand ? '&brand=' + selectedBrand : '' %><%= selectedMinPrice ? '&gt=' + selectedMinPrice : '' %><%= selectedMaxPrice ? '&lt=' + selectedMaxPrice : '' %>"><%=category[i].name%></a></li>
+                                                <li>
+                                                    <a href="/shop?category=<%=category[i]._id%><%= selectedBrand ? '&brand=' + selectedBrand : '' %><%= selectedMinPrice ? '&minPrice=' + selectedMinPrice : '' %><%= selectedMaxPrice ? '&maxPrice=' + selectedMaxPrice : '' %><%= searchQuery ? '&search=' + searchQuery : '' %>" 
+                                                       class="<%= selectedCategory === category[i]._id.toString() ? 'filter-active' : '' %>">
+                                                        <%=category[i].name%>
+                                                    </a>
+                                                </li>
                                                 <%}%>
                                             </ul>
                                         </div>
@@ -95,8 +180,13 @@
                                         <div class="shop__sidebar__brand">
                                             <ul>
                                                 <%for(let i=0;i<brand.length;i++){%>
-                                                    <li><a href="/shop?brand=<%=brand[i]._id%><%= selectedCategory ? '&category=' + selectedCategory : '' %><%= selectedMinPrice ? '&gt=' + selectedMinPrice : '' %><%= selectedMaxPrice ? '&lt=' + selectedMaxPrice : '' %>"><%=brand[i].brandName%></a></li>
-                                                    <%}%>
+                                                    <li>
+                                                        <a href="/shop?brand=<%=brand[i]._id%><%= selectedCategory ? '&category=' + selectedCategory : '' %><%= selectedMinPrice ? '&minPrice=' + selectedMinPrice : '' %><%= selectedMaxPrice ? '&maxPrice=' + selectedMaxPrice : '' %><%= searchQuery ? '&search=' + searchQuery : '' %>"
+                                                           class="<%= selectedBrand === brand[i]._id.toString() ? 'filter-active' : '' %>">
+                                                            <%=brand[i].brandName%>
+                                                        </a>
+                                                    </li>
+                                                <%}%>
                                             </ul>
                                         </div>
                                     </div>
@@ -104,112 +194,32 @@
                             </div>
                             <div class="card">
                                 <div class="card-heading">
-                                    <a data-toggle="collapse" data-target="#collapseThree">Filter Price</a>
+                                    <a data-toggle="collapse" data-target="#collapseThree">Price Filter</a>
                                 </div>
                                 <div id="collapseThree" class="collapse show" data-parent="#accordionExample">
                                     <div class="card-body">
                                         <div class="shop__sidebar__price">
-                                            <ul>
-                                                <li><a href="/shop?gt=<%= selectedMinPrice || 0 %>&lt=<%= selectedMaxPrice || 10000 %><%= selectedCategory ? '&category=' + selectedCategory : '' %><%= selectedBrand ? '&brand=' + selectedBrand : '' %>">Under ₹10,000</a></li>
-                                                <li><a href="/shop?gt=<%= selectedMinPrice || 10000 %>&lt=<%= selectedMaxPrice || 15000 %><%= selectedCategory ? '&category=' + selectedCategory : '' %><%= selectedBrand ? '&brand=' + selectedBrand : '' %>">Under ₹15,000</a></li>
-                                                <li><a href="/shop?gt=<%= selectedMinPrice || 15000 %>&lt=<%= selectedMaxPrice || 20000 %><%= selectedCategory ? '&category=' + selectedCategory : '' %><%= selectedBrand ? '&brand=' + selectedBrand : '' %>">Under ₹20,000</a></li>
-                                                <li><a href="/shop?gt=<%= selectedMinPrice || 20000 %>&lt=<%= selectedMaxPrice || 30000 %><%= selectedCategory ? '&category=' + selectedCategory : '' %><%= selectedBrand ? '&brand=' + selectedBrand : '' %>">Under ₹30,000</a></li>
-                                            </ul>
+                                            <form action="/shop" method="GET" class="price-filter-form">
+                                                <div class="price-inputs">
+                                                    <input type="number" name="minPrice" placeholder="Min Price" value="<%= selectedMinPrice || '' %>" min="0" required>
+                                                    <input type="number" name="maxPrice" placeholder="Max Price" value="<%= selectedMaxPrice || '' %>" min="0" required>
+                                                </div>
+                                                <!-- Preserve other filters when applying price filter -->
+                                                <% if (selectedCategory) { %>
+                                                    <input type="hidden" name="category" value="<%= selectedCategory %>">
+                                                <% } %>
+                                                <% if (selectedBrand) { %>
+                                                    <input type="hidden" name="brand" value="<%= selectedBrand %>">
+                                                <% } %>
+                                                <% if (searchQuery) { %>
+                                                    <input type="hidden" name="search" value="<%= searchQuery %>">
+                                                <% } %>
+                                                <button type="submit" class="site-btn">Apply Filter</button>
+                                            </form>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            <!-- <div class="card">
-                                <div class="card-heading">
-                                    <a data-toggle="collapse" data-target="#collapseFour">Size</a>
-                                </div>
-                                <div id="collapseFour" class="collapse show" data-parent="#accordionExample">
-                                    <div class="card-body">
-                                        <div class="shop__sidebar__size">
-                                            <label for="xs">xs
-                                                <input type="radio" id="xs">
-                                            </label>
-                                            <label for="sm">s
-                                                <input type="radio" id="sm">
-                                            </label>
-                                            <label for="md">m
-                                                <input type="radio" id="md">
-                                            </label>
-                                            <label for="xl">xl
-                                                <input type="radio" id="xl">
-                                            </label>
-                                            <label for="2xl">2xl
-                                                <input type="radio" id="2xl">
-                                            </label>
-                                            <label for="xxl">xxl
-                                                <input type="radio" id="xxl">
-                                            </label>
-                                            <label for="3xl">3xl
-                                                <input type="radio" id="3xl">
-                                            </label>
-                                            <label for="4xl">4xl
-                                                <input type="radio" id="4xl">
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div> -->
-                            <!-- <div class="card">
-                                <div class="card-heading">
-                                    <a data-toggle="collapse" data-target="#collapseFive">Colors</a>
-                                </div>
-                                <div id="collapseFive" class="collapse show" data-parent="#accordionExample">
-                                    <div class="card-body">
-                                        <div class="shop__sidebar__color">
-                                            <label class="c-1" for="sp-1">
-                                                <input type="radio" id="sp-1">
-                                            </label>
-                                            <label class="c-2" for="sp-2">
-                                                <input type="radio" id="sp-2">
-                                            </label>
-                                            <label class="c-3" for="sp-3">
-                                                <input type="radio" id="sp-3">
-                                            </label>
-                                            <label class="c-4" for="sp-4">
-                                                <input type="radio" id="sp-4">
-                                            </label>
-                                            <label class="c-5" for="sp-5">
-                                                <input type="radio" id="sp-5">
-                                            </label>
-                                            <label class="c-6" for="sp-6">
-                                                <input type="radio" id="sp-6">
-                                            </label>
-                                            <label class="c-7" for="sp-7">
-                                                <input type="radio" id="sp-7">
-                                            </label>
-                                            <label class="c-8" for="sp-8">
-                                                <input type="radio" id="sp-8">
-                                            </label>
-                                            <label class="c-9" for="sp-9">
-                                                <input type="radio" id="sp-9">
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div> -->
-                            <!-- <div class="card">
-                                <div class="card-heading">
-                                    <a data-toggle="collapse" data-target="#collapseSix">Tags</a>
-                                </div>
-                                <div id="collapseSix" class="collapse show" data-parent="#accordionExample">
-                                    <div class="card-body">
-                                        <div class="shop__sidebar__tags">
-                                            <a href="#">Product</a>
-                                            <a href="#">Bags</a>
-                                            <a href="#">Shoes</a>
-                                            <a href="#">Fashio</a>
-                                            <a href="#">Clothing</a>
-                                            <a href="#">Hats</a>
-                                            <a href="#">Accessories</a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div> -->
                         </div>
                     </div>
                 </div>
@@ -219,20 +229,39 @@
                     <div class="row">
                         <div class="col-lg-6 col-md-6 col-sm-6">
                             <div class="shop__product__option__left">
-                                <p>Showing 1–12 of 126 results</p>
+                                <p>Showing <%= showingStart %>–<%= showingEnd %> of <%= totalProducts %> results</p>
                             </div>
                         </div>
-                        <!-- <div class="col-lg-6 col-md-6 col-sm-6">
+                        <div class="col-lg-6 col-md-6 col-sm-6">
                             <div class="shop__product__option__right">
-                                <p>Sort by Price:</p>
-                                <select>
-                                    <option value="">Low To High</option>
-                                    <option value="">High to Low</option>
-                                    <option value="">Aa -Zz</option>
-                                    <option value="">Zz -Aa</option>
-                                </select>
+                                <p>Sort by:</p>
+                                <form action="/shop" method="GET" class="d-inline">
+                                    <!-- Preserve existing filters -->
+                                    <% if (selectedCategory) { %>
+                                        <input type="hidden" name="category" value="<%= selectedCategory %>">
+                                    <% } %>
+                                    <% if (selectedBrand) { %>
+                                        <input type="hidden" name="brand" value="<%= selectedBrand %>">
+                                    <% } %>
+                                    <% if (selectedMinPrice) { %>
+                                        <input type="hidden" name="minPrice" value="<%= selectedMinPrice %>">
+                                    <% } %>
+                                    <% if (selectedMaxPrice) { %>
+                                        <input type="hidden" name="maxPrice" value="<%= selectedMaxPrice %>">
+                                    <% } %>
+                                    <% if (searchQuery) { %>
+                                        <input type="hidden" name="search" value="<%= searchQuery %>">
+                                    <% } %>
+                                    <select name="sort" onchange="this.form.submit()" class="nice-select">
+                                        <option value="default" <%= !selectedSort || selectedSort === 'default' ? 'selected' : '' %>>Default</option>
+                                        <option value="name-asc" <%= selectedSort === 'name-asc' ? 'selected' : '' %>>Name (A-Z)</option>
+                                        <option value="name-desc" <%= selectedSort === 'name-desc' ? 'selected' : '' %>>Name (Z-A)</option>
+                                        <option value="price-asc" <%= selectedSort === 'price-asc' ? 'selected' : '' %>>Price (Low-High)</option>
+                                        <option value="price-desc" <%= selectedSort === 'price-desc' ? 'selected' : '' %>>Price (High-Low)</option>
+                                    </select>
+                                </form>
                             </div>
-                        </div> -->
+                        </div>
                     </div>
                 </div>
                 <div class="row">
