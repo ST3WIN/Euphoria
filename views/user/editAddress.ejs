@@ -144,6 +144,8 @@
         function submitForm(form) {
             const formData = new FormData(form);
             const data = Object.fromEntries(formData.entries());
+            const urlParams = new URLSearchParams(window.location.search);
+            const returnTo = urlParams.get('return');
         
             fetch('/editAddress', {
                 method: 'POST',
@@ -162,7 +164,12 @@
                         confirmButtonColor: '#e53637'
                     }).then((result) => {
                         if (result.isConfirmed) {
-                            window.location.href = '/userProfile';
+                            // Redirect based on return parameter
+                            if (returnTo === 'checkout') {
+                                window.location.href = '/checkout';
+                            } else {
+                                window.location.href = '/userProfile';
+                            }
                         }
                     });
                 } else {

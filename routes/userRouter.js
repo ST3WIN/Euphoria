@@ -6,6 +6,7 @@ const passport = require("passport")
 const productController = require("../controllers/user/productController")
 const profileController = require("../controllers/user/profileController")
 const cartController = require("../controllers/user/cartController")
+const checkoutController = require("../controllers/user/checkoutController")
 
 //Page not found
 router.get("/pageNotFound",userController.pageNotFound)
@@ -13,10 +14,8 @@ router.get("/pageNotFound",userController.pageNotFound)
 //Homepage & Shop page
 router.get("/",userController.loadHomePage)
 router.get('/shop', userController.loadShopPage);
-router.get('/filter', userController.loadShopPage);
-router.get('/filterPrice', userController.loadShopPage);
-router.post('/search', userController.loadShopPage);
-
+router.get('/shop/:filter?', userController.loadShopPage);
+router.get('/shop/:filter?/:search?', userController.loadShopPage);
 
 //Sign up
 router.get("/signup",userController.loadSignup)
@@ -76,6 +75,12 @@ router.post('/add-to-cart', auth.apiAuth,cartController.addToCart);
 router.get('/cart',auth.userAuth, cartController.getCart);
 router.post('/update-cart',auth.apiAuth, cartController.updateQuantity);
 router.post('/remove-from-cart',auth.apiAuth, cartController.removeFromCart);
+
+//Checkout
+router.get("/checkout",auth.userAuth,checkoutController.getCheckout)
+router.post("/checkout/add-address",auth.userAuth,checkoutController.addAddress)
+router.get("/checkout/get-address/:index",auth.userAuth,checkoutController.getAddress)
+router.put("/checkout/update-address/:index",auth.userAuth,checkoutController.updateAddress)
 
 // router.get("*",(req,res)=>{
 //     res.redirect("/pageNotFound")

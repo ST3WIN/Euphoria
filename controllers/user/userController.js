@@ -349,16 +349,38 @@ const loadShopPage = async (req, res) => {
         }
 
         // Handle price filter
-        if (req.query.gt !== undefined && req.query.lt !== undefined) {
+        if (req.query.minPrice !== undefined && req.query.maxPrice !== undefined) {
             query.salePrice = {
-                $gt: parseFloat(req.query.gt),
-                $lt: parseFloat(req.query.lt)
+                $gte: parseFloat(req.query.minPrice),
+                $lte: parseFloat(req.query.maxPrice)
             };
         }
 
         // Handle search
-        if (req.body.query) {
-            query.productName = { $regex: req.body.query, $options: 'i' };
+        if (req.query.search) {
+            query.$or = [
+                { productName: { $regex: req.query.search, $options: 'i' } },
+                { description: { $regex: req.query.search, $options: 'i' } }
+            ];
+        }
+
+        // Sort handling
+        let sort = { createdAt: -1 }; // default sort
+        if (req.query.sort) {
+            switch(req.query.sort) {
+                case 'price-asc':
+                    sort = { salePrice: 1 };
+                    break;
+                case 'price-desc':
+                    sort = { salePrice: -1 };
+                    break;
+                case 'name-asc':
+                    sort = { productName: 1 };
+                    break;
+                case 'name-desc':
+                    sort = { productName: -1 };
+                    break;
+            }
         }
 
         // Pagination
@@ -368,7 +390,7 @@ const loadShopPage = async (req, res) => {
 
         // Fetch products
         const products = await Product.find(query)
-            .sort({ createdAt: -1 })
+            .sort(sort)
             .skip(skip)
             .limit(limit)
             .lean();
@@ -391,10 +413,11 @@ const loadShopPage = async (req, res) => {
         const brands = await Brand.find({ isBlocked: false });
 
         // Save to search history if user is logged in
-        if (userData && (category || brand || req.body.query)) {
+        if (userData && (category || brand || req.query.search)) {
             const searchEntry = {
                 category: category || null,
                 brand: brand || null,
+                searchQuery: req.query.search || null,
                 searchOn: new Date()
             };
             userData.searchHistory.push(searchEntry);
@@ -415,9 +438,10 @@ const loadShopPage = async (req, res) => {
             showingEnd: Math.min(skip + limit, totalProducts),
             selectedCategory: category || null,
             selectedBrand: brand || null,
-            selectedMinPrice: req.query.gt || null,
-            selectedMaxPrice: req.query.lt || null,
-            searchQuery: req.body.query || ''
+            selectedMinPrice: req.query.minPrice || null,
+            selectedMaxPrice: req.query.maxPrice || null,
+            searchQuery: req.query.search || '',
+            selectedSort: req.query.sort || 'default'
         });
 
     } catch (error) {

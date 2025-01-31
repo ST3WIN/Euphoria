@@ -1,0 +1,373 @@
+<%- include("../../views/partials/user/header.ejs") %>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- <script src="https://checkout.razorpay.com/v1/checkout.js"></script> -->
+
+<section class="breadcrumb-option">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="breadcrumb__text">
+                    <h4>Checkout</h4>
+                    <div class="breadcrumb__links">
+                        <a href="/">Home</a>
+                        <a href="/cart">Shopping Cart</a>
+                        <span>Checkout</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="checkout spad">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8">
+                <h5 class="mb-4">Delivery Address</h5>
+                
+                <!-- Address Selection -->
+                <div class="address-selection mb-4">
+                    <% if (addresses && addresses.length > 0) { %>
+                        <% addresses.forEach((address, index) => { %>
+                            <div class="address-card mb-3 p-3 border rounded">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="selectedAddress" 
+                                           value="<%= index %>" id="address<%= index %>">
+                                    <label class="form-check-label" for="address<%= index %>">
+                                        <strong><%= address.name %></strong><br>
+                                        <%= address.place %>, <%= address.city %><br>
+                                        <%= address.state %> - <%= address.pincode %><br>
+                                        Phone: <%= address.phone %><br>
+                                        Alt Phone: <%= address.altPhone %><br>
+                                        <div class="mt-2">
+                                            <a href="/editAddress?id=<%= address._id %>&return=checkout" class="btn btn-sm btn-primary">Edit</a>
+                                        </div>
+                                    </label>
+                                </div>
+                                <div class="mt-2">
+                                    <!-- <button class="btn btn-sm btn-outline-secondary" 
+                                            onclick="editAddress('<%= index %>')">Edit</button> -->
+                                </div>
+                            </div>
+                        <% }); %>
+                    <% } %>
+                    <button class="btn btn-outline-primary" onclick="showAddAddressForm()">
+                        <i class="fa fa-plus"></i> Add New Address
+                    </button>
+                </div>
+
+                <!-- Add/Edit Address Form (Initially Hidden) -->
+                <div id="addressForm" class="mb-4" style="display: none;">
+                    <form id="shippingAddressForm">
+                        <input type="hidden" id="addressIndex">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <input type="text" class="form-control" id="name" placeholder="Full Name" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <input type="tel" class="form-control" id="phone" placeholder="Phone Number" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <input type="tel" class="form-control" id="altPhone" placeholder="Alternative Phone Number" required>
+                        </div>
+                        <div class="mb-3">
+                            <input type="text" class="form-control" id="place" placeholder="Address (House No, Street, Area)" required>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <input type="text" class="form-control" id="city" placeholder="City" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <input type="text" class="form-control" id="state" placeholder="State" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <input type="number" class="form-control" id="pincode" placeholder="PIN Code" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <select class="form-control" id="addressType" required>
+                                <option value="">Select Address Type</option>
+                                <option value="home">Home</option>
+                                <option value="work">Work</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Save Address</button>
+                        <button type="button" class="btn btn-secondary" onclick="hideAddressForm()">Cancel</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Order Summary -->
+            <div class="col-lg-4">
+                <div class="checkout__order">
+                    <h5>Your Order</h5>
+                    <div class="checkout__order__product">
+                        <ul>
+                            <% let subtotal = 0; %>
+                            <% cartItems.forEach(item => { %>
+                                <li><%= item.productId.productName %> × <%= item.quantity %> 
+                                    <span>₹<%= item.totalPrice.toLocaleString('en-IN') %></span></li>
+                                <% subtotal += item.totalPrice; %>
+                            <% }); %>
+                        </ul>
+                    </div>
+                    <div class="checkout__order__total">
+                        <ul>
+                            <li>Subtotal <span>₹<%= subtotal.toLocaleString('en-IN') %></span></li>
+                            <li id="discountRow" style="display: none;">Discount <span id="discountAmount">₹0</span></li>
+                            <li>Total <span id="finalTotal">₹<%= subtotal.toLocaleString('en-IN') %></span></li>
+                        </ul>
+                    </div>
+
+                    <!-- Payment Options -->
+                    <div class="payment-options mb-4">
+                        <h6>Payment Method</h6>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="paymentMethod" id="wallet" value="wallet">
+                            <label class="form-check-label" for="wallet">
+                                Wallet (Balance: ₹<%= walletBalance.toLocaleString('en-IN') %>)
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="paymentMethod" id="cod" value="cod">
+                            <label class="form-check-label" for="cod">
+                                Cash on Delivery
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="paymentMethod" id="online" value="online">
+                            <label class="form-check-label" for="online">
+                                Online Payment
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Coupon Section (Moved here) -->
+                    <div class="coupon-section mb-4">
+                        <h6>Have a Coupon?</h6>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="couponCode" placeholder="Enter coupon code">
+                            <button class="btn btn-outline-secondary" type="button" onclick="applyCoupon()">Apply</button>
+                        </div>
+                        <div id="couponMessage" class="mt-2"></div>
+                    </div>
+
+                    <button type="button" class="site-btn" onclick="placeOrder()">PLACE ORDER</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+function showAddAddressForm() {
+    document.getElementById('addressForm').style.display = 'block';
+    // Clear form fields
+    document.getElementById('addressIndex').value = '';
+    document.getElementById('shippingAddressForm').reset();
+}
+
+function hideAddressForm() {
+    document.getElementById('addressForm').style.display = 'none';
+}
+
+document.getElementById('shippingAddressForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const addressData = {
+        name: document.getElementById('name').value,
+        phone: document.getElementById('phone').value,
+        altPhone: document.getElementById('altPhone').value,
+        place: document.getElementById('place').value,
+        city: document.getElementById('city').value,
+        state: document.getElementById('state').value,
+        pincode: document.getElementById('pincode').value,
+        addressType: document.getElementById('addressType').value
+    };
+
+    const addressIndex = document.getElementById('addressIndex').value;
+    const url = addressIndex === '' ? '/checkout/add-address' : `/checkout/update-address/${addressIndex}`;
+    const method = addressIndex === '' ? 'POST' : 'PUT';
+
+    try {
+        const response = await fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(addressData)
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+            Swal.fire({
+                title: 'Success!',
+                text: 'Address saved successfully',
+                icon: 'success',
+                confirmButtonText: 'OK'
+            }).then(() => {
+                location.reload();
+            });
+        } else {
+            Swal.fire({
+                title: 'Error!',
+                text: result.message || 'Failed to save address',
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Swal.fire({
+            title: 'Error!',
+            text: 'Something went wrong',
+            icon: 'error',
+            confirmButtonText: 'OK'
+        });
+    }
+});
+
+async function editAddress(index) {
+    try {
+        const response = await fetch(`/checkout/get-address/${index}`);
+        const address = await response.json();
+        
+        if (response.ok) {
+            document.getElementById('addressIndex').value = index;
+            document.getElementById('name').value = address.name;
+            document.getElementById('phone').value = address.phone;
+            document.getElementById('altPhone').value = address.altPhone;
+            document.getElementById('place').value = address.place;
+            document.getElementById('city').value = address.city;
+            document.getElementById('state').value = address.state;
+            document.getElementById('pincode').value = address.pincode;
+            document.getElementById('addressType').value = address.addressType;
+            
+            document.getElementById('addressForm').style.display = 'block';
+        } else {
+            Swal.fire({
+                title: 'Error!',
+                text: 'Failed to load address',
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Swal.fire({
+            title: 'Error!',
+            text: 'Something went wrong',
+            icon: 'error',
+            confirmButtonText: 'OK'
+        });
+    }
+}
+
+function applyCoupon() {
+    const couponCode = document.getElementById('couponCode').value;
+    fetch('/apply-coupon', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ couponCode })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('discountRow').style.display = 'list-item';
+            document.getElementById('discountAmount').textContent = `₹${data.discount.toLocaleString('en-IN')}`;
+            document.getElementById('finalTotal').textContent = `₹${data.finalTotal.toLocaleString('en-IN')}`;
+            document.getElementById('couponMessage').innerHTML = `<span class="text-success">Coupon applied successfully!</span>`;
+        } else {
+            document.getElementById('couponMessage').innerHTML = `<span class="text-danger">${data.message}</span>`;
+        }
+    });
+}
+
+function placeOrder() {
+    const selectedAddress = document.querySelector('input[name="selectedAddress"]:checked');
+    const selectedPayment = document.querySelector('input[name="paymentMethod"]:checked');
+
+    if (!selectedAddress) {
+        Swal.fire('Error', 'Please select a delivery address', 'error');
+        return;
+    }
+    if (!selectedPayment) {
+        Swal.fire('Error', 'Please select a payment method', 'error');
+        return;
+    }
+
+    const orderData = {
+        addressIndex: selectedAddress.value,
+        paymentMethod: selectedPayment.value,
+        couponCode: document.getElementById('couponCode').value
+    };
+
+    if (selectedPayment.value === 'online') {
+        // Handle Razorpay payment
+        initiateRazorpayPayment(orderData);
+    } else {
+        // Handle COD or wallet payment
+        submitOrder(orderData);
+    }
+}
+
+function initiateRazorpayPayment(orderData) {
+    fetch('/create-razorpay-order', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        const options = {
+            key: data.razorpayKeyId,
+            amount: data.amount,
+            currency: data.currency,
+            order_id: data.orderId,
+            name: 'Euphoria',
+            description: 'Purchase Payment',
+            handler: function (response) {
+                orderData.razorpayPaymentId = response.razorpay_payment_id;
+                orderData.razorpayOrderId = response.razorpay_order_id;
+                orderData.razorpaySignature = response.razorpay_signature;
+                submitOrder(orderData);
+            },
+        };
+        const rzp = new Razorpay(options);
+        rzp.open();
+    });
+}
+
+function submitOrder(orderData) {
+    fetch('/place-order', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                title: 'Success',
+                text: 'Order placed successfully!',
+                icon: 'success'
+            }).then(() => {
+                window.location.href = '/orders';
+            });
+        } else {
+            Swal.fire('Error', data.message, 'error');
+        }
+    });
+}
+</script>
+
+<%- include("../../views/partials/user/footer.ejs") %>
