@@ -76,13 +76,16 @@
                                             </div>
                                             <div class="product__cart__item__text">
                                                 <h6><%= item.productId.productName %></h6>
-                                                <h5>₹<%= item.price.toLocaleString('en-IN') %></h5>
+                                                <!-- Add id and data-price attributes to price element -->
+                                                <h5 id="price-<%= item.productId._id %>" data-price="<%= item.price %>">₹<%= item.price.toLocaleString('en-IN') %></h5>
                                             </div>
                                         </td>
                                         <td class="quantity__item">
                                             <div class="quantity">
                                                 <div class="pro-qty-2">
+                                                    <!-- Add id to quantity input -->
                                                     <input type="number" 
+                                                           id="quantity-<%= item.productId._id %>"
                                                            value="<%= item.quantity %>" 
                                                            min="1" 
                                                            max="5"
@@ -91,7 +94,8 @@
                                                 </div>
                                             </div>
                                         </td>
-                                        <td class="cart__price">₹<%= item.totalPrice.toLocaleString('en-IN') %></td>
+                                        <!-- Add id to subtotal element -->
+                                        <td class="cart__price" id="subtotal-<%= item.productId._id %>">₹<%= item.totalPrice.toLocaleString('en-IN') %></td>
                                         <td class="cart__close">
                                             <i class="fa fa-close" onclick="removeFromCart('<%= item.productId._id %>')"></i>
                                         </td>
@@ -125,8 +129,9 @@
                     <div class="cart__total">
                         <h6>Cart total</h6>
                         <ul>
-                            <li>Subtotal <span>₹<%= subtotal.toLocaleString('en-IN') %></span></li>
-                            <li>Total <span>₹<%= total.toLocaleString('en-IN') %></span></li>
+                            <!-- <li>Subtotal <span>₹<%= subtotal.toLocaleString('en-IN') %></span></li> -->
+                            <!-- Add id to total element -->
+                            <li>Total <span id="cart-total">₹<%= total.toLocaleString('en-IN') %></span></li>
                         </ul>
                         <a href="/checkout" class="primary-btn">Proceed to checkout</a>
                     </div>
@@ -149,7 +154,7 @@
             });
             return;
         }
-
+    
         if (quantity > 5) {
             Swal.fire({
                 title: 'Quantity Limit Exceeded',
@@ -158,7 +163,7 @@
             });
             quantity = 5;
         }
-
+    
         fetch('/update-cart', {
             method: 'POST',
             headers: {
@@ -172,7 +177,28 @@
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                location.reload();
+                // Update quantity display
+                updateQuantityDisplay(productId, quantity);
+                
+                // Update subtotal for this item
+                const priceElement = document.querySelector(`#price-${productId}`);
+                const price = parseFloat(priceElement.getAttribute('data-price'));
+                const subtotal = price * quantity;
+                const subtotalElement = document.querySelector(`#subtotal-${productId}`);
+                subtotalElement.textContent = `₹${subtotal.toFixed(2)}`;
+                
+                // Update cart total
+                updateCartTotal();
+    
+                // Show success toast
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: 'Cart updated',
+                    showConfirmButton: false,
+                    timer: 1500
+                });
             } else {
                 throw new Error(data.message || 'Failed to update cart');
             }
@@ -185,6 +211,32 @@
                 icon: 'error'
             });
         });
+    }
+    
+    function updateQuantityDisplay(productId, quantity) {
+        // Update quantity input
+        const quantityInput = document.querySelector(`#quantity-${productId}`);
+        if (quantityInput) {
+            quantityInput.value = quantity;
+        }
+    }
+    
+    function updateCartTotal() {
+        // Calculate new cart total
+        let total = 0;
+        const subtotalElements = document.querySelectorAll('[id^="subtotal-"]');
+        subtotalElements.forEach(element => {
+            const subtotal = parseFloat(element.textContent.replace('₹', ''));
+            if (!isNaN(subtotal)) {
+                total += subtotal;
+            }
+        });
+    
+        // Update total display
+        const cartTotalElement = document.querySelector('#cart-total');
+        if (cartTotalElement) {
+            cartTotalElement.textContent = `₹${total.toLocaleString('en-IN')}`;
+        }
     }
 
     function removeFromCart(productId) {
@@ -215,7 +267,47 @@
                 })
                 .then(data => {
                     if (data.success) {
-                        location.reload();
+                        // Remove the item row from the table
+                        const itemRow = document.querySelector(`tr:has(#price-${productId})`);
+                        if (itemRow) {
+                            itemRow.remove();
+                        }
+    
+                        // Update cart total
+                        updateCartTotal();
+    
+                        // Check if cart is empty after removal
+                        const remainingItems = document.querySelectorAll('.product__cart__item');
+                        if (remainingItems.length === 0) {
+                            // Replace table content with empty cart message
+                            const tbody = document.querySelector('tbody');
+                            tbody.innerHTML = `
+                                <tr>
+                                    <td colspan="4" class="text-center">
+                                        <p>Your cart is empty</p>
+                                        <div class="continue__btn" style="margin-top: 20px;">
+                                            <a href="/shop">Continue Shopping</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            `;
+    
+                            // Hide cart total section
+                            const cartTotalSection = document.querySelector('.cart__total').parentElement;
+                            if (cartTotalSection) {
+                                cartTotalSection.style.display = 'none';
+                            }
+                        }
+    
+                        // Show success toast
+                        Swal.fire({
+                            toast: true,
+                            position: 'top-end',
+                            icon: 'success',
+                            title: 'Item removed from cart',
+                            showConfirmButton: false,
+                            timer: 1500
+                        });
                     } else {
                         throw new Error(data.message || 'Failed to remove item from cart');
                     }
