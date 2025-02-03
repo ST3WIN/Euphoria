@@ -1,5 +1,6 @@
 const User = require("../../models/userSchema")
 const Address = require("../../models/addressSchema")
+const Order = require("../../models/orderSchema")
 const nodemailer = require("nodemailer")
 const bcrypt = require("bcrypt")
 const env = require("dotenv").config()
@@ -8,6 +9,23 @@ const session = require("express-session")
 function generateOtp(){
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     return otp;
+}
+
+function getStatusBadgeClass(status) {
+    switch (status) {
+        case 'Pending':
+            return 'bg-warning';
+        case 'Processing':
+            return 'bg-info';
+        case 'Shipped':
+            return 'bg-primary';
+        case 'Delivered':
+            return 'bg-success';
+        case 'Cancelled':
+            return 'bg-danger';
+        default:
+            return 'bg-secondary';
+    }
 }
 
 async function sendVerificationEmail(email, otp) {
@@ -159,11 +177,26 @@ const userProfile = async(req,res)=>{
         const userId = req.session.user || null
         const userData = await User.findById(userId)
         const addressData = await Address.findOne({userId:userId})
+        const orders = await Order.find({ address: userId })
+            .populate({
+                path: 'orderItems.product',
+                select: 'productName productImage salePrice'
+            })
+            .sort({ createdOn: -1 });
+
+        // Get order message from session and clear it
+        const orderMessage = req.session.orderMessage;
+        delete req.session.orderMessage;
+
         res.render("userProfile",{
             user:userId,
-            userAddress:addressData
+            userAddress:addressData,
+            orders: orders,
+            getStatusBadgeClass: getStatusBadgeClass,
+            orderMessage: orderMessage || null
         })
     } catch (error) {
+        console.error('Profile error:', error);
         res.redirect("/page-404")
     }
 }

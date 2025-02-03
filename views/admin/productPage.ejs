@@ -58,6 +58,11 @@
         <div class="col-lg-8">
             <div class="card mb-4">
                 <div class="card-body">
+                    <% if (locals.error) { %>
+                        <div class="alert alert-danger" role="alert">
+                            <%= error %>
+                        </div>
+                    <% } %>
                     <form method="POST" action="/admin/addProducts" enctype="multipart/form-data" onsubmit="return validateForm()">
                         <!-- Product Name -->
                         <div class="form-section">
@@ -132,6 +137,7 @@
                         <div class="card mb-2">
                             <div class="card-header">
                                 <h4>Choose images</h4>
+                                <small class="text-muted">Upload up to 4 images (JPEG, JPG, PNG, or WEBP only, max 5MB each)</small>
                             </div>
                             <div class="border row">
                                 <div id="addedImagesContainer" class="thumbnails-container"></div>
@@ -142,8 +148,8 @@
                                 <div class="card-body align-items-center" style="margin-bottom: 20px;">
                                     <img src="" alt="" id="imgView1" class="preview-image">
                                     <input class="form-control" type="file" name="images" id="input1"
-                                        accept="image/png, image/jpeg, image/jpg"
-                                        onchange="viewImage(event, 1)">
+                                        accept="image/jpeg, image/jpg, image/png, image/webp"
+                                        onchange="validateAndPreviewImage(event, 1)">
                                     <div id="images-error" class="error-message"></div>
                                 </div>
                                 <div class="image-cropper d-flex align-items-center">
@@ -157,8 +163,8 @@
                                 <div class="card-body align-items-center" style="margin-bottom: 20px;">
                                     <img src="" alt="" id="imgView2" class="preview-image">
                                     <input class="form-control" type="file" name="images" id="input2"
-                                        accept="image/png, image/jpeg, image/jpg"
-                                        onchange="viewImage(event, 2)">
+                                        accept="image/jpeg, image/jpg, image/png, image/webp"
+                                        onchange="validateAndPreviewImage(event, 2)">
                                 </div>
                                 <div class="image-cropper d-flex align-items-center">
                                     <img src="" id="croppedImg2" alt="">
@@ -171,8 +177,8 @@
                                 <div class="card-body align-items-center" style="margin-bottom: 20px;">
                                     <img src="" alt="" id="imgView3" class="preview-image">
                                     <input class="form-control" type="file" name="images" id="input3"
-                                        accept="image/png, image/jpeg, image/jpg"
-                                        onchange="viewImage(event, 3)">
+                                        accept="image/jpeg, image/jpg, image/png, image/webp"
+                                        onchange="validateAndPreviewImage(event, 3)">
                                 </div>
                                 <div class="image-cropper d-flex align-items-center">
                                     <img src="" id="croppedImg3" alt="">
@@ -185,8 +191,8 @@
                                 <div class="card-body align-items-center" style="margin-bottom: 20px;">
                                     <img src="" alt="" id="imgView4" class="preview-image">
                                     <input class="form-control" type="file" name="images" id="input4"
-                                        accept="image/png, image/jpeg, image/jpg"
-                                        onchange="viewImage(event, 4)">
+                                        accept="image/jpeg, image/jpg, image/png, image/webp"
+                                        onchange="validateAndPreviewImage(event, 4)">
                                 </div>
                                 <div class="image-cropper d-flex align-items-center">
                                     <img src="" id="croppedImg4" alt="">
@@ -323,6 +329,42 @@ function viewImage(event, index) {
     reader.readAsDataURL(input.files[0]);
 }
 
+function validateAndPreviewImage(event, index) {
+    const file = event.target.files[0];
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    
+    // Clear previous error
+    clearErrorMessages();
+    
+    if (file) {
+        // Check file type
+        if (!allowedTypes.includes(file.type)) {
+            showError('Please upload only JPEG, JPG, PNG, or WEBP images');
+            event.target.value = ''; // Clear the input
+            return;
+        }
+        
+        // Check file size
+        if (file.size > maxSize) {
+            showError('Image size should not exceed 5MB');
+            event.target.value = ''; // Clear the input
+            return;
+        }
+        
+        // If validation passes, preview the image
+        viewImage(event, index);
+    }
+}
+
+function showError(message) {
+    Swal.fire({
+        icon: 'error',
+        title: 'Upload Error',
+        text: message
+    });
+}
+
 const selectedImage = []
 document.getElementById("input1").addEventListener("change",handleFileSelect)
 
@@ -437,8 +479,5 @@ function clearErrorMessages() {
         error.innerText = '';
     });
 }
-
-
-    
 </script>  
 <%- include("../../views/partials/admin/footer") %>

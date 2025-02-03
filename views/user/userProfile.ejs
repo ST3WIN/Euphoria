@@ -538,37 +538,56 @@
                 <!-- Orders Tab -->
                 <div class="tab-pane fade" id="orders">
                     <h5 class="mb-4"><i class="fas fa-box me-2"></i>Your Orders</h5>
-                    <div class="order-card">
-                        <div class="row">
-                            <div class="col-md-3">
-                                <p class="text-muted mb-0">Order #12345</p>
-                                <small class="text-muted">January 1, 2024</small>
+                    <div id="ordersList">
+                        <% if (orders && orders.length > 0) { %>
+                            <% orders.forEach(order => { %>
+                                <div class="order-card mb-4">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <div>
+                                            <h6 class="mb-1">Order #<%= order.orderId %></h6>
+                                            <small class="text-muted">Placed on <%= new Date(order.createdOn).toLocaleDateString() %></small>
+                                        </div>
+                                        <div>
+                                            <span class="badge <%= getStatusBadgeClass(order.status) %>"><%= order.status %></span>
+                                        </div>
+                                    </div>
+                                    <div class="order-items mb-3">
+                                        <% order.orderItems.forEach(item => { %>
+                                            <div class="d-flex align-items-center mb-2">
+                                                <img src="/uploads/re-image/<%= item.product.productImage[0] %>" 
+                                                     alt="<%= item.product.productName %>" 
+                                                     class="me-3" style="width: 60px; height: 60px; object-fit: cover;">
+                                                <div>
+                                                    <h6 class="mb-0"><%= item.product.productName %></h6>
+                                                    <small class="text-muted">
+                                                        Qty: <%= item.quantity %> × ₹<%= item.price.toLocaleString('en-IN') %>
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        <% }) %>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>Total: ₹<%= order.finalAmount.toLocaleString('en-IN') %></strong>
+                                        </div>
+                                        <div>
+                                            <% if (order.status === 'Pending' || order.status === 'Processing') { %>
+                                                <form action="/orders/cancel/<%= order._id %>" method="POST" 
+                                                      onsubmit="return confirmCancel(event)">
+                                                    <button type="submit" class="btn btn-danger btn-sm">
+                                                        Cancel Order
+                                                    </button>
+                                                </form>
+                                            <% } %>
+                                        </div>
+                                    </div>
+                                </div>
+                            <% }) %>
+                        <% } else { %>
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>No orders found.
                             </div>
-                            <div class="col-md-6">
-                                <p class="mb-0">3 Items</p>
-                                <small class="text-muted">Delivered on January 5, 2024</small>
-                            </div>
-                            <div class="col-md-3 text-end">
-                                <p class="mb-0">$150.00</p>
-                                <button class="btn btn-sm btn-outline-primary mt-2">View Details</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="order-card">
-                        <div class="row">
-                            <div class="col-md-3">
-                                <p class="text-muted mb-0">Order #12344</p>
-                                <small class="text-muted">December 28, 2023</small>
-                            </div>
-                            <div class="col-md-6">
-                                <p class="mb-0">2 Items</p>
-                                <small class="text-muted">Delivered on December 31, 2023</small>
-                            </div>
-                            <div class="col-md-3 text-end">
-                                <p class="mb-0">$89.99</p>
-                                <button class="btn btn-sm btn-outline-primary mt-2">View Details</button>
-                            </div>
-                        </div>
+                        <% } %>
                     </div>
                 </div>
 
@@ -618,6 +637,28 @@
     </div>
 </div>
 <script>
+    function confirmCancel(event) {
+        event.preventDefault();
+        const form = event.target;
+        
+        Swal.fire({
+            title: 'Cancel Order',
+            text: 'Are you sure you want to cancel this order?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, cancel it!',
+            cancelButtonText: 'No, keep it'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                form.submit();
+            }
+        });
+        
+        return false;
+    }
+
     function validateEditAddressForm() {
         let isValid = true;
         const form = document.getElementById('addressForm');
@@ -954,6 +995,148 @@
     }
     </script>
 
+<script>
+    <% if (orderMessage) { %>
+        Swal.fire({
+            icon: '<%= orderMessage.type %>',
+            title: '<%= orderMessage.type === "success" ? "Success!" : "Oops..." %>',
+            text: '<%= orderMessage.message %>',
+            showConfirmButton: <%= orderMessage.type === "error" %>,
+            timer: <%= orderMessage.type === "success" ? 2000 : null %>
+        });
+    <% } %>
+
+    function confirmCancel(event) {
+        event.preventDefault();
+        const form = event.target;
+        
+        Swal.fire({
+            title: 'Cancel Order',
+            text: 'Are you sure you want to cancel this order?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, cancel it!',
+            cancelButtonText: 'No, keep it'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                form.submit();
+            }
+        });
+        
+        return false;
+    }
+</script>
+<script>
+    function loadOrders() {
+        fetch('/orders/list')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const ordersHtml = data.orders.map(order => `
+                        <div class="order-card mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <h6 class="mb-1">Order #${order.orderId}</h6>
+                                    <small class="text-muted">Placed on ${new Date(order.createdOn).toLocaleDateString()}</small>
+                                </div>
+                                <div>
+                                    <span class="badge ${getStatusBadgeClass(order.status)}">${order.status}</span>
+                                </div>
+                            </div>
+                            <div class="order-items mb-3">
+                                ${order.orderItems.map(item => `
+                                    <div class="d-flex align-items-center mb-2">
+                                        <img src="/uploads/re-image/${item.product.productImage[0]}" 
+                                             alt="${item.product.productName}" 
+                                             class="me-3" style="width: 60px; height: 60px; object-fit: cover;">
+                                        <div>
+                                            <h6 class="mb-0">${item.product.productName}</h6>
+                                            <small class="text-muted">
+                                                Qty: ${item.quantity} × ₹${item.price.toLocaleString('en-IN')}
+                                            </small>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>Total: ₹${order.finalAmount.toLocaleString('en-IN')}</strong>
+                                </div>
+                                <div>
+                                    ${order.status === 'Pending' || order.status === 'Processing' ? `
+                                        <button class="btn btn-danger btn-sm" onclick="cancelOrder('${order.orderId}')">
+                                            Cancel Order
+                                        </button>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                    
+                    document.getElementById('ordersList').innerHTML = ordersHtml || `
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>No orders found.
+                        </div>
+                    `;
+                } else {
+                    throw new Error(data.message || 'Failed to load orders');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('ordersList').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle me-2"></i>Failed to load orders. Please try again.
+                    </div>
+                `;
+            });
+    }
+
+    function cancelOrder(orderId) {
+        Swal.fire({
+            title: 'Cancel Order',
+            text: 'Are you sure you want to cancel this order?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, cancel it!',
+            cancelButtonText: 'No, keep it'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch(`/orders/${orderId}/cancel`, {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire(
+                            'Cancelled!',
+                            'Your order has been cancelled.',
+                            'success'
+                        );
+                        loadOrders(); // Reload orders list
+                    } else {
+                        throw new Error(data.message || 'Failed to cancel order');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    Swal.fire(
+                        'Error!',
+                        error.message || 'Failed to cancel order',
+                        'error'
+                    );
+                });
+            }
+        });
+    }
+
+    // Load orders when the orders tab is shown
+    document.querySelector('a[data-bs-target="#orders"]').addEventListener('click', loadOrders);
+</script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <%- include("../../views/partials/user/footer.ejs") %>

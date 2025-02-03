@@ -138,13 +138,13 @@
                         <p style="color: red;">Hurry up only <%= product.quantity %> left in stock!</p>
                         <%}%>
                         <!-- Stock Display -->
-                        <div id="stock-display">Choose your size</div>
+                        <div id="stock-display">Size:<%= product.size%></div>
 
                         <!-- Size Selection -->
-                        <div class="product__details__option">
+                        <!-- <div class="product__details__option">
                             <div class="product__details__option__size" data-product-id="<%= product._id %>">
                                 <span>Size: <%= product.size%></span>
-                                <!-- <% ['50ML', '100ML'].forEach(size => { %>
+                                <% ['50ML', '100ML'].forEach(size => { %>
                                     <label for="<%= size %>">
                                         <%= size %>
                                         <input type="radio" 
@@ -152,9 +152,9 @@
                                                name="size" 
                                                value="<%= size %>">
                                     </label>
-                                <% }) %> -->
+                                <% }) %>
                             </div>
-                        </div>
+                        </div> -->
 
                         <!-- Quantity and Add to Cart -->
                         <div class="product__details__cart__option">

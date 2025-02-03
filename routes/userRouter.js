@@ -7,6 +7,7 @@ const productController = require("../controllers/user/productController")
 const profileController = require("../controllers/user/profileController")
 const cartController = require("../controllers/user/cartController")
 const checkoutController = require("../controllers/user/checkoutController")
+const orderController = require("../controllers/user/orderController")
 
 //Page not found
 router.get("/pageNotFound",userController.pageNotFound)
@@ -82,8 +83,10 @@ router.post("/checkout/add-address",auth.userAuth,checkoutController.addAddress)
 router.get("/checkout/get-address/:index",auth.userAuth,checkoutController.getAddress)
 router.put("/checkout/update-address/:index",auth.userAuth,checkoutController.updateAddress)
 
-// router.get("*",(req,res)=>{
-//     res.redirect("/pageNotFound")
-// })
+// Orders
+router.post("/orders/place",auth.userAuth,orderController.placeOrder)
+router.post("/orders/cancel/:orderId",auth.userAuth,orderController.cancelOrder)
+
+
 
 module.exports = router

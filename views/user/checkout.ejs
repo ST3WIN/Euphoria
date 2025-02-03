@@ -125,21 +125,9 @@
                     <div class="payment-options mb-4">
                         <h6>Payment Method</h6>
                         <div class="form-check mb-2">
-                            <input class="form-check-input" type="radio" name="paymentMethod" id="wallet" value="wallet">
-                            <label class="form-check-label" for="wallet">
-                                Wallet (Balance: ₹<%= walletBalance.toLocaleString('en-IN') %>)
-                            </label>
-                        </div>
-                        <div class="form-check mb-2">
-                            <input class="form-check-input" type="radio" name="paymentMethod" id="cod" value="cod">
+                            <input class="form-check-input" type="radio" name="paymentMethod" id="cod" value="cod" checked>
                             <label class="form-check-label" for="cod">
                                 Cash on Delivery
-                            </label>
-                        </div>
-                        <div class="form-check mb-2">
-                            <input class="form-check-input" type="radio" name="paymentMethod" id="online" value="online">
-                            <label class="form-check-label" for="online">
-                                Online Payment
                             </label>
                         </div>
                     </div>
@@ -288,65 +276,19 @@ function applyCoupon() {
     });
 }
 
-function placeOrder() {
-    const selectedAddress = document.querySelector('input[name="selectedAddress"]:checked');
-    const selectedPayment = document.querySelector('input[name="paymentMethod"]:checked');
-
-    if (!selectedAddress) {
-        Swal.fire('Error', 'Please select a delivery address', 'error');
-        return;
-    }
-    if (!selectedPayment) {
-        Swal.fire('Error', 'Please select a payment method', 'error');
-        return;
-    }
-
-    const orderData = {
-        addressIndex: selectedAddress.value,
-        paymentMethod: selectedPayment.value,
-        couponCode: document.getElementById('couponCode').value
-    };
-
-    if (selectedPayment.value === 'online') {
-        // Handle Razorpay payment
-        initiateRazorpayPayment(orderData);
-    } else {
-        // Handle COD or wallet payment
-        submitOrder(orderData);
-    }
-}
-
-function initiateRazorpayPayment(orderData) {
-    fetch('/create-razorpay-order', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(orderData)
-    })
-    .then(response => response.json())
-    .then(data => {
-        const options = {
-            key: data.razorpayKeyId,
-            amount: data.amount,
-            currency: data.currency,
-            order_id: data.orderId,
-            name: 'Euphoria',
-            description: 'Purchase Payment',
-            handler: function (response) {
-                orderData.razorpayPaymentId = response.razorpay_payment_id;
-                orderData.razorpayOrderId = response.razorpay_order_id;
-                orderData.razorpaySignature = response.razorpay_signature;
-                submitOrder(orderData);
-            },
-        };
-        const rzp = new Razorpay(options);
-        rzp.open();
-    });
-}
-
 function submitOrder(orderData) {
-    fetch('/place-order', {
+    // Show loading state
+    Swal.fire({
+        title: 'Processing Order',
+        text: 'Please wait...',
+        allowOutsideClick: false,
+        showConfirmButton: false,
+        willOpen: () => {
+            Swal.showLoading();
+        }
+    });
+
+    fetch('/orders/place', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -357,16 +299,43 @@ function submitOrder(orderData) {
     .then(data => {
         if (data.success) {
             Swal.fire({
-                title: 'Success',
-                text: 'Order placed successfully!',
-                icon: 'success'
+                title: 'Success!',
+                text: 'Your order has been placed successfully',
+                icon: 'success',
+                showConfirmButton: true,
+                timer: 2000
             }).then(() => {
-                window.location.href = '/orders';
+                window.location.href = '/userProfile#orders';
             });
         } else {
-            Swal.fire('Error', data.message, 'error');
+            throw new Error(data.message || 'Failed to place order');
         }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        Swal.fire({
+            title: 'Error',
+            text: error.message || 'Something went wrong while placing the order',
+            icon: 'error',
+            confirmButtonText: 'OK'
+        });
     });
+}
+
+function placeOrder() {
+    const selectedAddress = document.querySelector('input[name="selectedAddress"]:checked');
+
+    if (!selectedAddress) {
+        Swal.fire('Error', 'Please select a delivery address', 'error');
+        return;
+    }
+
+    const orderData = {
+        addressIndex: selectedAddress.value,
+        paymentMethod: 'cod'
+    };
+
+    submitOrder(orderData);
 }
 </script>
 

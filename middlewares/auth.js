@@ -7,11 +7,17 @@ const userAuth = (req,res,next)=>{
             if(data && !data.isBlocked){
                 next()
             }else{
-                res.redirect("/login")
+                // If user is blocked or doesn't exist, destroy their session
+                req.session.destroy((err) => {
+                    if(err) {
+                        console.log("Error destroying session:", err);
+                    }
+                    res.redirect("/login")
+                })
             }
         })
         .catch(error=>{
-            console.log("User authenticaion error middleware",error)
+            console.log("User authentication error middleware",error)
             res.status(500).send("Internal server error")
         })
     }else{

@@ -9,6 +9,7 @@ const env = require("dotenv").config()
 const db = require("./config/db")
 const userRouter = require("./routes/userRouter")
 const adminRouter = require("./routes/adminRouter")
+const User = require('./models/userSchema');
 
 db()
 
@@ -35,8 +36,32 @@ app.set("views",[path.join(__dirname,"views/user"),path.join(__dirname,"views/ad
 
 app.use(express.static(path.join(__dirname,"public")))
 
+app.use(async (req, res, next) => {
+    // Skip this middleware for admin routes
+    if (req.path.startsWith('/admin')) {
+        return next();
+    }
+
+    if (req.session.user) {
+        try {
+            const user = await User.findById(req.session.user);
+            if (user && user.isBlocked) {
+                req.session.destroy();
+                return res.redirect('/login');
+            }
+            res.locals.user = user;
+        } catch (error) {
+            console.error('Error checking user blocked status:', error);
+        }
+    }
+    next();
+});
+
 app.use("/",userRouter)
 app.use("/admin",adminRouter)
+app.get("*",(req,res)=>{
+    res.redirect("/pageNotFound")
+})
 
 const PORT = 3000 || process.env.PORT
 app.listen(PORT,()=>{

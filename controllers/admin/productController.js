@@ -24,6 +24,17 @@ const addProducts = async (req, res) => {
     try {
         const products = req.body;
 
+        // Validate file uploads
+        if (!req.files || req.files.length === 0) {
+            const category = await Category.find({isListed:true});
+            const brand = await Brand.find({isBlocked:false});
+            return res.render("productPage", {
+                category: category,
+                brand: brand,
+                error: "Please upload at least one product image"
+            });
+        }
+
         // Check if product already exists
         const productExists = await Product.findOne({
             productName: { $regex: `^${products.productName}$`, $options: "i" }
@@ -35,20 +46,26 @@ const addProducts = async (req, res) => {
             // Handle image upload and resizing
             if (req.files && req.files.length > 0) {
                 for (let i = 0; i < req.files.length; i++) {
-                    const originalImagePath = req.files[i].path; // Path from Multer
+                    const originalImagePath = req.files[i].path;
                     const resizedImagePath = path.join(
                         "public",
                         "uploads",
                         "product-images",
-                        req.files[i].filename // Use `filename`, not `fileName`
+                        req.files[i].filename
                     );
 
-                    // Resize and save the image
-                    await sharp(originalImagePath)
-                        .resize({ width: 440, height: 440 })
-                        .toFile(resizedImagePath);
+                    try {
+                        // Resize and save the image
+                        await sharp(originalImagePath)
+                            .resize({ width: 440, height: 440 })
+                            .toFile(resizedImagePath);
 
-                    images.push(req.files[i].filename); // Push the filename
+                        images.push(req.files[i].filename);
+                    } catch (error) {
+                        // If image processing fails, delete the uploaded file
+                        fs.unlinkSync(originalImagePath);
+                        throw new Error(`Failed to process image ${req.files[i].originalname}`);
+                    }
                 }
             }
 

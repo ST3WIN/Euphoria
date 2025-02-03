@@ -117,7 +117,7 @@ const getCart = async (req, res) => {
         }
         const cartItems = cart.items;
         const subtotal = cartItems.reduce((total, item) => total + item.totalPrice, 0);
-        const total = subtotal;  // Add shipping or other costs if needed
+        const total = subtotal;  
         res.render("cart", {
             user: userData,
             cartItems: cartItems,
@@ -166,7 +166,7 @@ const updateQuantity = async (req, res) => {
                 message: 'Item not found in cart'
             });
         }
-        // Update quantity and total price
+        
         cartItem.quantity = quantity;
         cartItem.totalPrice = quantity * cartItem.price;
         await cart.save();
