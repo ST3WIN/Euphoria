@@ -11,15 +11,51 @@
             width: 100px;
             height: 100px;
             display: none;
-            /* Initially hidden */
         }
-        .checked{
+        
+        .checked {
             color: orange;
         }
 
         .zoomable-image {
             cursor: none;
-            /* Hide the cursor over the image */
+        }
+
+        .product__details__text {
+            padding: 20px 0;
+        }
+
+        .wishlist-btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 15px;
+            background: #fff;
+            border: 1px solid #e53637;
+            color: #e53637;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .wishlist-btn:hover {
+            background: #e53637;
+            color: #fff;
+        }
+
+        .wishlist-btn i {
+            margin-right: 8px;
+        }
+
+        .quantity {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .quantity input {
+            border: 1px solid #ddd;
+            padding: 5px;
         }
     </style>
 </head>
@@ -105,7 +141,7 @@
                         <!-- Rating -->
                         <div class="rating">
                             <% for(let i = 0; i < 5; i++) { %>
-                                <span class="fa fa-star checked <%= i < Math.floor(product.rating || 0) ? 'checked' : '' %>"></span>
+                                <span class="fa fa-star <%= i < Math.floor(product.rating || 0) ? 'checked' : '' %>"></span>
                             <% } %>
                         </div>
 
@@ -132,29 +168,16 @@
 
                         <!-- Description -->
                         <p><%= product.description || 'No description available' %></p>
-                        <% if(product.quantity==0){%>
+                        
+                        <!-- Stock Info -->
+                        <% if(product.quantity==0) { %>
                             <p style="color: red;">Out of stock!</p>
-                            <%}else{%>
-                        <p style="color: red;">Hurry up only <%= product.quantity %> left in stock!</p>
-                        <%}%>
-                        <!-- Stock Display -->
-                        <div id="stock-display">Size:<%= product.size%></div>
-
-                        <!-- Size Selection -->
-                        <!-- <div class="product__details__option">
-                            <div class="product__details__option__size" data-product-id="<%= product._id %>">
-                                <span>Size: <%= product.size%></span>
-                                <% ['50ML', '100ML'].forEach(size => { %>
-                                    <label for="<%= size %>">
-                                        <%= size %>
-                                        <input type="radio" 
-                                               id="<%= size %>" 
-                                               name="size" 
-                                               value="<%= size %>">
-                                    </label>
-                                <% }) %>
-                            </div>
-                        </div> -->
+                        <% } else { %>
+                            <p style="color: red;">Hurry up only <%= product.quantity %> left in stock!</p>
+                        <% } %>
+                        
+                        <!-- Size Display -->
+                        <div id="stock-display">Size: <%= product.size%></div>
 
                         <!-- Quantity and Add to Cart -->
                         <div class="product__details__cart__option">
@@ -169,20 +192,17 @@
                                            style="width: 60px; padding: 5px;">
                                 </div>
                             </div>
-                            <button class="primary-btn" onclick="addToCart('<%= product._id %>', event)">Add to Cart</button>
+                            <button class="primary-btn" onclick="addToCart('<%= product._id %>', event)"
+                                    <%= product.quantity === 0 ? 'disabled' : '' %>>
+                                Add to Cart
+                            </button>
                         </div>
 
                         <!-- Wishlist -->
                         <div class="product__details__btns__option">
-                            <a href="#" onclick="addToWishlist('<%= product._id %>')">
+                            <a href="#" class="wishlist-btn" onclick="addToWishlist('<%= product._id %>')">
                                 <i class="fa fa-heart"></i> Add to Wishlist
                             </a>
-                        </div>
-
-                        <!-- Payment Info -->
-                        <div class="product__details__last__option">
-                            <h5><span>Guaranteed Safe Checkout</span></h5>
-                           
                         </div>
                     </div>
                 </div>

@@ -66,6 +66,7 @@ app.get("*",(req,res)=>{
 const PORT = 3000 || process.env.PORT
 app.listen(PORT,()=>{
     console.log(`Server running on ${process.env.PORT}`)
+    console.log("http://localhost:3000/")
 })
 
 module.exports = app
