@@ -17,6 +17,8 @@ router.get("/",userController.loadHomePage)
 router.get('/shop', userController.loadShopPage);
 router.get('/shop/:filter?', userController.loadShopPage);
 router.get('/shop/:filter?/:search?', userController.loadShopPage);
+router.get('/shop/:filter?', userController.loadShopPage);
+router.get('/shop/:filter?/:search?', userController.loadShopPage);
 
 //Sign up
 router.get("/signup",userController.loadSignup)
