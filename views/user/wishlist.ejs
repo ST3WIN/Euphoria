@@ -1,0 +1,156 @@
+<%- include("../../views/partials/user/header.ejs") %>
+<section class="breadcrumb-option">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="breadcrumb__text">
+                    <h4>Wishlist</h4>
+                    <div class="breadcrumb__links">
+                        <a href="/">Home</a>
+                        <a href="/shop">Shop</a>
+                        <span>Wishlist</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    .product-img {
+        width: 120px;
+        height: 120px;
+        object-fit: cover;
+        border-radius: 8px;
+    }
+    .wishlist-row {
+        transition: all 0.3s ease;
+        background: white;
+    }
+    .wishlist-row:hover {
+        background: #f8f9fa;
+    }
+    .discount-badge {
+        background-color: #e8f5e9;
+        color: #2e7d32;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+    }
+    .product-name {
+        font-size: 1rem;
+        color: #333;
+        margin-bottom: 0.5rem;
+    }
+    .table-header {
+        font-weight: 600;
+        color: #333;
+    }
+</style>
+
+<main class="min-vh-100 bg-light py-5">
+    <div class="container">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3 mb-0">My Wishlist</h1>
+            <a href="/shop" class="btn btn-outline-secondary">
+                Continue Shopping
+            </a>
+        </div>
+
+        <% if (wishlist && wishlist.length > 0) { %>
+            <div class="bg-white rounded shadow-sm">
+                <!-- Table Header -->
+                <div class="row p-3 border-bottom bg-light">
+                    <div class="col-md-2 table-header">Product</div>
+                    <div class="col-md-3 table-header">Product Name</div>
+                    <div class="col-md-2 table-header">Category</div>
+                    <div class="col-md-2 table-header">Price</div>
+                    <div class="col-md-3 table-header text-md-end">Actions</div>
+                </div>
+
+                <!-- Wishlist Items -->
+                <% wishlist.forEach(product => { %>
+                    <div class="wishlist-row row p-3 align-items-center border-bottom">
+                        <!-- Product Image -->
+                        <div class="col-md-2">
+                            <img src="/uploads/re-image/<%= product.productImage[0] %>" 
+                                 alt="<%= product.productName %>" 
+                                 class="product-img">
+                        </div>
+
+                        <!-- Product Name -->
+                        <div class="col-md-3">
+                            <span class="product-name"><%= product.productName %></span>
+                        </div>
+
+                        <!-- Category -->
+                        <div class="col-md-2">
+                            <span><%= product.category.name %></span>
+                        </div>
+
+                        <!-- Price -->
+                        <div class="col-md-2">
+                            <% if (product.salePrice === product.regularPrice) { %>
+                                <span class="h5 mb-0">₹<%= product.regularPrice.toLocaleString('en-IN') %></span>
+                            <% } else { %>
+                                <div class="d-flex flex-column gap-1">
+                                    <span class="h5 mb-0">₹<%= product.salePrice.toLocaleString('en-IN') %></span>
+                                    <div>
+                                        <span class="text-decoration-line-through text-muted small">₹<%= product.regularPrice.toLocaleString('en-IN') %></span>
+                                        <span class="discount-badge ms-1">
+                                            <%= Math.round((1 - product.salePrice/product.regularPrice) * 100) %>% OFF
+                                        </span>
+                                    </div>
+                                </div>
+                            <% } %>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="col-md-3 text-md-end">
+                            <div class="d-flex gap-3 justify-content-md-end">
+                                <button onclick="addToCart('<%= product._id %>')" 
+                                        class="btn btn-primary mr-3">
+                                    Add to Cart
+                                </button>
+                                <button onclick="removeFromWishlist('<%= product._id %>')"
+                                        class="btn btn-danger"
+                                        title="Remove from wishlist">
+                                    Remove
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                <% }); %>
+            </div>
+        <% } else { %>
+            <div class="text-center py-5 bg-white rounded shadow-sm">
+                <h2 class="h4 mb-3">Your wishlist is empty</h2>
+                <p class="text-muted mb-4">Add items to your wishlist to save them for later!</p>
+                <a href="/shop" class="btn btn-primary">
+                    Explore Products
+                </a>
+            </div>
+        <% } %>
+    </div>
+</main>
+
+<%- include("../../views/partials/user/footer.ejs") %>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    function removeFromWishlist(productId){
+        Swal.fire({
+            title:"Are you sure?",
+            text:"Product will be removed",
+            icon:"warning",
+            showCancelButton:true,
+            confirmButtonColor:"#3085d6",
+            cancelButton:"#d33",
+            confirmButtonText:"Yes"
+        }).then((result)=>{
+            if(result.isConfirmed){
+                window.location.href = `/removeFromWishlist?productId=${productId}`
+            }
+        })
+    }
+</script>

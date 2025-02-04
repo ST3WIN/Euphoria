@@ -8,6 +8,7 @@ const profileController = require("../controllers/user/profileController")
 const cartController = require("../controllers/user/cartController")
 const checkoutController = require("../controllers/user/checkoutController")
 const orderController = require("../controllers/user/orderController")
+const wishlistController = require("../controllers/user/wishlistController")
 
 //Page not found
 router.get("/pageNotFound",userController.pageNotFound)
@@ -84,6 +85,11 @@ router.get("/checkout",auth.userAuth,checkoutController.getCheckout)
 router.post("/checkout/add-address",auth.userAuth,checkoutController.addAddress)
 router.get("/checkout/get-address/:index",auth.userAuth,checkoutController.getAddress)
 router.put("/checkout/update-address/:index",auth.userAuth,checkoutController.updateAddress)
+
+//Wishlist Management
+router.get("/wishlist",auth.userAuth,wishlistController.loadWishList)
+router.post("/addToWishlist",auth.apiAuth,wishlistController.addToWishlist)
+router.get("/removeFromWishlist",auth.userAuth,wishlistController.removeProduct)
 
 // Orders
 router.post("/orders/place",auth.userAuth,orderController.placeOrder)

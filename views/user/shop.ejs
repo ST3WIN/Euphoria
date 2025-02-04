@@ -276,7 +276,7 @@
                             <div class="product__item__text">
                                 <h6><%= products[i].productName%></h6>
                                 <h6><%= products[i].brand%></h6>
-                                <a href="#" class="add-cart">+ Add To Cart</a>
+                                <a href="javascript:void(0)" class="add-cart" onclick="addToWishlist('<%= products[i]._id%>')">Add to Wishlist</a>
                                 <div class="rating">
                                     <span class="fa fa-star checked"></span>
                                             <span class="fa fa-star checked"></span>
@@ -320,3 +320,53 @@
     </div>
 </section>
 <%- include("../../views/partials/user/footer.ejs") %>
+
+<script>
+    function addToWishlist(productId){
+        $.ajax({
+            url:"/addToWishlist",
+            method:"POST",
+            data:{productId:productId},
+            success:(response)=>{
+                if(response.status){
+                    Swal.fire({
+                        title:"Added to Wishlist",
+                        text:"Product has been added to your wishlist",
+                        icon:"success",
+                        timer:2000
+                    })
+                }else{
+                    Swal.fire({
+                        title:"Already in wishlist",
+                        text:response.message,
+                        icon:"info",
+                        timer:2000
+                    })
+                }
+            },
+            error:(error)=>{
+                if(error.status === 401) {
+                    Swal.fire({
+                        title:"Please Login",
+                        text:"You need to login to add items to wishlist",
+                        icon:"warning",
+                        showCancelButton: true,
+                        confirmButtonText: 'Login',
+                        cancelButtonText: 'Cancel'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.location.href = '/login';
+                        }
+                    });
+                } else {
+                    Swal.fire({
+                        title:"Error",
+                        text:"Error, please try again",
+                        icon:"error",
+                        timer:2000
+                    })
+                }
+            }
+        })
+    }
+</script>

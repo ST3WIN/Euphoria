@@ -47,7 +47,7 @@
         }
 
         .quantity {
-            display: flex;
+            display: flex; 
             align-items: center;
             gap: 10px;
             margin-bottom: 15px;
@@ -200,7 +200,7 @@
 
                         <!-- Wishlist -->
                         <div class="product__details__btns__option">
-                            <a href="#" class="wishlist-btn" onclick="addToWishlist('<%= product._id %>')">
+                            <a href="javascript:void(0)" class="wishlist-btn" onclick="addToWishlist('<%= product._id %>')">
                                 <i class="fa fa-heart"></i> Add to Wishlist
                             </a>
                         </div>
@@ -212,7 +212,17 @@
 </section>
 
 <%- include("../../views/partials/user/footer.ejs") %>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script src="js/jquery.nice-select.min.js"></script>
+    <script src="js/jquery.nicescroll.min.js"></script>
+    <script src="js/jquery.magnific-popup.min.js"></script>
+    <script src="js/jquery.countdown.min.js"></script>
+    <script src="js/jquery.slicknav.js"></script>
+    <script src="js/mixitup.min.js"></script>
+    <script src="js/owl.carousel.min.js"></script>
+    <script src="js/main.js"></script>
     <script>
         function addToCart(productId, event) {
             event.preventDefault();
@@ -362,3 +372,57 @@
             
         });
     </script>
+    <script>
+        function addToWishlist(productId){
+            console.log('Adding to wishlist:', productId);
+            $.ajax({
+                url:"/addToWishlist",
+                method:"POST",
+                data:{productId:productId},
+                success:(response)=>{
+                    console.log('Success response:', response);
+                    if(response.status){
+                        Swal.fire({
+                            title:"Added to Wishlist",
+                            text:"Product has been added to your wishlist",
+                            icon:"success",
+                            timer:2000
+                        })
+                    }else{
+                        Swal.fire({
+                            title:"Already in wishlist",
+                            text:response.message,
+                            icon:"info",
+                            timer:2000
+                        })
+                    }
+                },
+                error:(error)=>{
+                    console.log('Error:', error);
+                    if(error.status === 401) {
+                        Swal.fire({
+                            title:"Please Login",
+                            text:"You need to login to add items to wishlist",
+                            icon:"warning",
+                            showCancelButton: true,
+                            confirmButtonText: 'Login',
+                            cancelButtonText: 'Cancel'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                window.location.href = '/login';
+                            }
+                        });
+                    } else {
+                        Swal.fire({
+                            title:"Error",
+                            text:"Error, please try again",
+                            icon:"error",
+                            timer:2000
+                        })
+                    }
+                }
+            })
+        }
+    </script>
+</body>
+</html>
