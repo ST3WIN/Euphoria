@@ -109,7 +109,7 @@
                         <!-- Actions -->
                         <div class="col-md-3 text-md-end">
                             <div class="d-flex gap-3 justify-content-md-end">
-                                <button onclick="addToCart('<%= product._id %>')" 
+                                <button onclick="addToCart('<%= product._id %>',event)" 
                                         class="btn btn-primary mr-3">
                                     Add to Cart
                                 </button>
@@ -152,5 +152,59 @@
                 window.location.href = `/removeFromWishlist?productId=${productId}`
             }
         })
+    }
+    function addToCart(productId, event) {
+        event.preventDefault();
+        const quantity = 1
+
+        fetch('/add-to-cart', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                productId: productId,
+                quantity: quantity
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                Swal.fire({
+                    title: 'Success!',
+                    text: 'Product added to cart successfully',
+                    icon: 'success',
+                    timer: 2000,
+                    showConfirmButton: false
+                }).then(() => {
+                    window.location.href = '/removeFromWishlist';
+                });
+            } else {
+                throw new Error(data.message || 'Failed to add product to cart');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            if (error.message.includes('login')) {
+                Swal.fire({
+                    title: 'Login Required',
+                    text: 'Please login to add items to cart',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Login',
+                    cancelButtonText: 'Cancel'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = '/login';
+                    }
+                });
+            } else {
+                Swal.fire({
+                    title: 'Error!',
+                    text: error.message || 'Failed to add product to cart',
+                    icon: 'error'
+                });
+            }
+        });
     }
 </script>

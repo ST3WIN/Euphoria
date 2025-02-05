@@ -95,6 +95,4 @@ router.get("/removeFromWishlist",auth.userAuth,wishlistController.removeProduct)
 router.post("/orders/place",auth.userAuth,orderController.placeOrder)
 router.post("/orders/cancel/:orderId",auth.userAuth,orderController.cancelOrder)
 
-
-
 module.exports = router
