@@ -60,5 +60,7 @@ router.post("/deleteImage",auth.adminAuth,productController.deleteSingleImage)
 router.get("/coupon",auth.adminAuth,couponController.loadCoupon)
 router.post("/createCoupon",auth.adminAuth,couponController.createCoupon)
 router.get("/editCoupon",auth.adminAuth,couponController.editCoupon)
+router.post("/updateCoupon",auth.adminAuth,couponController.updateCoupon)
+router.get("/deleteCoupon",auth.adminAuth,couponController.deleteCoupon)
 
 module.exports = router
