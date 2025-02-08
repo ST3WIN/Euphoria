@@ -1,3 +1,21 @@
+<head>
+    <style>
+        .coupon-card {
+            background-color: #f8f9fa;
+            transition: all 0.3s ease;
+        }
+        
+        .coupon-card:hover {
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .coupon-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
 <%- include("../../views/partials/user/header.ejs") %>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <!-- <script src="https://checkout.razorpay.com/v1/checkout.js"></script> -->
@@ -130,8 +148,47 @@
                                 Cash on Delivery
                             </label>
                         </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="paymentMethod" id="online" value="online">
+                            <label class="form-check-label" for="online">
+                                Online Payment
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="paymentMethod" id="wallet" value="wallet">
+                            <label class="form-check-label" for="wallet">
+                                Wallet
+                            </label>
+                        </div>
                     </div>
 
+                    <div class="available-coupons mb-4">
+                        <h6>Available Coupons</h6>
+                        <div class="coupon-list">
+                            <% if (availableCoupons && availableCoupons.length > 0) { %>
+                                <% availableCoupons.forEach(coupon => { %>
+                                    <div class="coupon-card p-3 mb-2 border rounded">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="mb-1"><%= coupon.name %></h6>
+                                                <p class="mb-1 small">Save ₹<%= coupon.offerPrice %></p>
+                                                <p class="mb-1 small text-muted">Min. Order: ₹<%= coupon.minimumPrice %></p>
+                                                <p class="mb-0 small text-muted">Expires: <%= new Date(coupon.expireOn).toLocaleDateString() %></p>
+                                            </div>
+                                            <button 
+                                                class="btn btn-sm btn-outline-primary" 
+                                                onclick="applyCouponCode('<%= coupon.name %>')"
+                                            >
+                                                Apply
+                                            </button>
+                                        </div>
+                                    </div>
+                                <% }); %>
+                            <% } else { %>
+                                <p class="text-muted">No coupons available</p>
+                            <% } %>
+                        </div>
+                    </div>
                     <!-- Coupon Section (Moved here) -->
                     <div class="coupon-section mb-4">
                         <h6>Have a Coupon?</h6>
@@ -150,6 +207,10 @@
 </section>
 
 <script>
+function applyCouponCode(couponCode) {
+        document.getElementById('couponCode').value = couponCode;
+        applyCoupon();
+    }
 function showAddAddressForm() {
     document.getElementById('addressForm').style.display = 'block';
     // Clear form fields

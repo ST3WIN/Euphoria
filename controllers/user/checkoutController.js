@@ -3,14 +3,13 @@ const Product = require("../../models/productSchema");
 const Cart = require('../../models/cartSchema');
 const Address = require('../../models/addressSchema');
 const Order = require('../../models/orderSchema');
-// const Coupon = require("../../models/couponSchema");
+const Coupon = require("../../models/couponSchema");
 // const Wallet = require("../../models/walletSchema")
 // const Razorpay = require('razorpay');
 const crypto = require('crypto');
 
 const getCheckout = async (req, res) => {
     try {
-        // Get user's cart items
         const userId = req.session.user._id;
         const cart = await Cart.findOne({ userId }).populate('items.productId');
         
@@ -18,24 +17,31 @@ const getCheckout = async (req, res) => {
             return res.redirect('/cart');
         }
 
-        // Get user's addresses
         const userAddresses = await Address.findOne({ userId });
         const addresses = userAddresses ? userAddresses.address : [];
         const userData = await User.findById(userId);
-        // Get user's wallet balance
-        const user = await User.findById(userId);
-        const walletBalance = user.wallet || 0;
+        const walletBalance = userData.wallet || 0;
 
-        // Calculate total
+        // Calculate total before coupon query
         const cartItems = cart.items;
         const total = cartItems.reduce((sum, item) => sum + item.totalPrice, 0);
 
+
+        const currentDate = new Date();
+        
+
+        const availableCoupons = await Coupon.find({
+            isListed: true,
+            expireOn: { $gt: currentDate },
+            minimumPrice: { $lte: total || 0 }
+        });
         res.render("checkout", {
             cartItems,
             addresses,
             walletBalance,
             total,
-            user:userData
+            user: userData,
+            availableCoupons
         });
     } catch (error) {
         console.error('Checkout error:', error);
