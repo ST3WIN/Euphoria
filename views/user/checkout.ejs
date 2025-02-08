@@ -151,7 +151,7 @@
                         <div class="form-check mb-2">
                             <input class="form-check-input" type="radio" name="paymentMethod" id="online" value="online">
                             <label class="form-check-label" for="online">
-                                Online Payment
+                                Online Payment(UPI,Cards,Net Banking)
                             </label>
                         </div>
                         <div class="form-check mb-2">
@@ -194,7 +194,7 @@
                         <h6>Have a Coupon?</h6>
                         <div class="input-group">
                             <input type="text" class="form-control" id="couponCode" placeholder="Enter coupon code">
-                            <button class="btn btn-outline-secondary" type="button" onclick="applyCoupon()">Apply</button>
+                            <button class="btn btn-outline-secondary" id="couponButton" type="button" onclick="applyCoupon()">Apply</button>
                         </div>
                         <div id="couponMessage" class="mt-2"></div>
                     </div>
@@ -315,8 +315,29 @@ async function editAddress(index) {
     }
 }
 
+let originalTotal = parseFloat(document.getElementById('finalTotal').textContent.replace('₹', '').replace(',', ''));
+
 function applyCoupon() {
-    const couponCode = document.getElementById('couponCode').value;
+    const couponButton = document.getElementById('couponButton');
+    const couponCodeInput = document.getElementById('couponCode');
+
+    if (couponButton.textContent === 'Remove') {
+        // Remove coupon and reset values
+        couponCodeInput.value = '';
+        document.getElementById('discountRow').style.display = 'none';
+        document.getElementById('discountAmount').textContent = '';
+        document.getElementById('finalTotal').textContent = `₹${originalTotal.toLocaleString('en-IN')}`;
+        document.getElementById('couponMessage').innerHTML = '';
+        couponButton.textContent = 'Apply';
+        return;
+    }
+
+    const couponCode = couponCodeInput.value.trim();
+    if (!couponCode) {
+        document.getElementById('couponMessage').innerHTML = `<span class="text-danger">Please enter a coupon code.</span>`;
+        return;
+    }
+
     fetch('/apply-coupon', {
         method: 'POST',
         headers: {
@@ -329,8 +350,9 @@ function applyCoupon() {
         if (data.success) {
             document.getElementById('discountRow').style.display = 'list-item';
             document.getElementById('discountAmount').textContent = `₹${data.discount.toLocaleString('en-IN')}`;
-            document.getElementById('finalTotal').textContent = `₹${data.finalTotal.toLocaleString('en-IN')}`;
+            document.getElementById('finalTotal').textContent = `₹${data.finalAmount.toLocaleString('en-IN')}`;
             document.getElementById('couponMessage').innerHTML = `<span class="text-success">Coupon applied successfully!</span>`;
+            couponButton.textContent = 'Remove';
         } else {
             document.getElementById('couponMessage').innerHTML = `<span class="text-danger">${data.message}</span>`;
         }
@@ -385,7 +407,7 @@ function submitOrder(orderData) {
 
 function placeOrder() {
     const selectedAddress = document.querySelector('input[name="selectedAddress"]:checked');
-
+    const couponInput = document.getElementById('couponCode');
     if (!selectedAddress) {
         Swal.fire('Error', 'Please select a delivery address', 'error');
         return;
@@ -393,9 +415,9 @@ function placeOrder() {
 
     const orderData = {
         addressIndex: selectedAddress.value,
-        paymentMethod: 'cod'
-    };
-
+        paymentMethod: 'cod',
+        couponCode: couponInput ? couponInput.value.trim() : null
+    }
     submitOrder(orderData);
 }
 </script>
