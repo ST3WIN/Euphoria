@@ -35,6 +35,18 @@ const orderSchema = new Schema({
         type:Number,
         required:true
     },
+    paymentMethod: { 
+        type: String, 
+        enum: ['COD', 'Razorpay', 'WALLET'], 
+        required: true 
+    },
+    paymentStatus: { 
+        type: String, 
+        enum: ['Pending', 'Paid', 'Failed'], 
+        default: 'Pending' 
+    },razorpayPaymentId: { 
+        type: String 
+    },  // Store Razorpay payment ID
     address:{
         type:Schema.Types.ObjectId,
         ref:"User",

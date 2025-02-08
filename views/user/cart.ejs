@@ -154,7 +154,7 @@
             });
             return;
         }
-    
+        
         if (quantity > 5) {
             Swal.fire({
                 title: 'Quantity Limit Exceeded',
@@ -187,10 +187,10 @@
                 const subtotalElement = document.querySelector(`#subtotal-${productId}`);
                 subtotalElement.textContent = `₹${subtotal.toFixed(2)}`;
                 
-                // Update cart total
+                
                 updateCartTotal();
     
-                // Show success toast
+                
                 Swal.fire({
                     toast: true,
                     position: 'top-end',

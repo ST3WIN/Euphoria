@@ -149,7 +149,7 @@
                             </label>
                         </div>
                         <div class="form-check mb-2">
-                            <input class="form-check-input" type="radio" name="paymentMethod" id="online" value="online">
+                            <input class="form-check-input" type="radio" name="paymentMethod" id="online" value="razorpay">
                             <label class="form-check-label" for="online">
                                 Online Payment(UPI,Cards,Net Banking)
                             </label>
@@ -205,7 +205,7 @@
         </div>
     </div>
 </section>
-
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script>
 function applyCouponCode(couponCode) {
         document.getElementById('couponCode').value = couponCode;
@@ -408,17 +408,165 @@ function submitOrder(orderData) {
 function placeOrder() {
     const selectedAddress = document.querySelector('input[name="selectedAddress"]:checked');
     const couponInput = document.getElementById('couponCode');
+    const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked');
+
     if (!selectedAddress) {
         Swal.fire('Error', 'Please select a delivery address', 'error');
         return;
     }
 
+    if (!paymentMethod) {
+        Swal.fire('Error', 'Please select a payment method', 'error');
+        return;
+    }
+
     const orderData = {
         addressIndex: selectedAddress.value,
-        paymentMethod: 'cod',
+        paymentMethod: paymentMethod.value.toUpperCase(), // Convert to uppercase to match schema enum
         couponCode: couponInput ? couponInput.value.trim() : null
+    };
+
+    if (paymentMethod.value === 'razorpay') {
+        initiateRazorpayPayment(orderData);
+    } else if (paymentMethod.value === 'wallet') {
+        // Handle wallet payment
+        submitOrder(orderData);
+    } else {
+        // Handle COD
+        submitOrder(orderData);
     }
-    submitOrder(orderData);
+}
+
+function initiateRazorpayPayment(orderData) {
+    // Show loading state
+    const finalAmount = parseFloat(document.getElementById('finalTotal').textContent
+        .replace('₹', '').replace(/,/g, ''));
+        const discount = parseFloat(document.getElementById('discountAmount').textContent
+        .replace('₹', '').replace(/,/g, ''));
+    // Add finalAmount to orderData
+    orderData.finalAmount = finalAmount;
+    orderData.discount = discount
+    Swal.fire({
+        title: 'Initiating Payment',
+        text: 'Please wait...',
+        allowOutsideClick: false,
+        showConfirmButton: false,
+        willOpen: () => {
+            Swal.showLoading();
+        }
+    });
+
+    // First create order on your backend
+    fetch('/orders/place', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data.success) {
+            throw new Error(data.message || 'Failed to create order');
+        }
+        
+        Swal.close();
+
+        // Initialize Razorpay checkout
+        const options = {
+            key: data.key,
+            amount: data.amount * 100, // Amount in paise
+            currency: "INR",
+            name: "Euphoria",
+            description: "Order Payment",
+            order_id: data.orderId,
+            handler: function (response) {
+                verifyPayment(response, data.orderId,finalAmount,discount);
+            },
+            prefill: {
+                name: "Customer Name", // You can pass customer details from your session
+                email: "customer@example.com",
+                contact: "9999999999"
+            },
+            theme: {
+                color: "#3399cc"
+            }
+        };
+
+        const rzp1 = new Razorpay(options);
+        rzp1.open();
+        
+        // Handle payment failures
+        rzp1.on('payment.failed', function (response) {
+            Swal.fire({
+                title: 'Payment Failed',
+                text: 'The payment process failed. Please try again.',
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+        });
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        Swal.fire({
+            title: 'Error',
+            text: error.message || 'Something went wrong while initiating payment',
+            icon: 'error',
+            confirmButtonText: 'OK'
+        });
+    });
+}
+
+function verifyPayment(paymentResponse, orderId, finalAmount,discount) {
+    // Show loading state
+    Swal.fire({
+        title: 'Verifying Payment',
+        text: 'Please wait...',
+        allowOutsideClick: false,
+        showConfirmButton: false,
+        willOpen: () => {
+            Swal.showLoading();
+        }
+    });
+
+    // Verify payment with your backend
+    fetch('/orders/verify-payment', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            razorpay_payment_id: paymentResponse.razorpay_payment_id,
+            razorpay_order_id: paymentResponse.razorpay_order_id,
+            razorpay_signature: paymentResponse.razorpay_signature,
+            finalAmount: finalAmount,
+            discount:discount // Pass finalAmount here
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                title: 'Success!',
+                text: 'Payment successful! Your order has been placed.',
+                icon: 'success',
+                showConfirmButton: true
+            }).then(() => {
+                window.location.href = '/userProfile#orders';
+            });
+        } else {
+            throw new Error(data.message || 'Payment verification failed');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        Swal.fire({
+            title: 'Error',
+            text: error.message || 'Payment verification failed',
+            icon: 'error',
+            confirmButtonText: 'OK'
+        });
+    });
 }
 </script>
 
