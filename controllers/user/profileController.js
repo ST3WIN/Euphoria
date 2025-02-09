@@ -184,14 +184,19 @@ const userProfile = async(req,res)=>{
             })
             .sort({ createdOn: -1 });
 
+        // Get wallet transactions
+        const { getWalletTransactions } = require('./walletController');
+        const walletTransactions = await getWalletTransactions(userId);
+
         // Get order message from session and clear it
         const orderMessage = req.session.orderMessage;
         delete req.session.orderMessage;
 
         res.render("userProfile",{
-            user:userId,
-            userAddress:addressData,
+            user: userData,
+            userAddress: addressData,
             orders: orders,
+            walletTransactions: walletTransactions,
             getStatusBadgeClass: getStatusBadgeClass,
             orderMessage: orderMessage || null
         })

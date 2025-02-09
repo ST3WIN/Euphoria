@@ -10,6 +10,7 @@ const checkoutController = require("../controllers/user/checkoutController")
 const orderController = require("../controllers/user/orderController")
 const couponController = require("../controllers/user/couponController")
 const wishlistController = require("../controllers/user/wishlistController")
+const walletController = require("../controllers/user/walletController")
 
 //Page not found
 router.get("/pageNotFound",userController.pageNotFound)
@@ -91,6 +92,9 @@ router.put("/checkout/update-address/:index",auth.userAuth,checkoutController.up
 router.get("/wishlist",auth.userAuth,wishlistController.loadWishList)
 router.post("/addToWishlist",auth.apiAuth,wishlistController.addToWishlist)
 router.get("/removeFromWishlist",auth.userAuth,wishlistController.removeProduct)
+
+//Wallet
+router.post("/addMoneyToWallet", auth.userAuth, walletController.addMoneyToWallet)
 
 //Coupon
 router.post("/apply-coupon",auth.userAuth,couponController.applyCoupon)

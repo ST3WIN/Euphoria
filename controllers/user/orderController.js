@@ -14,7 +14,7 @@ const razorpayInstance = new Razorpay({
 const placeOrder = async (req, res) => {
     try {
         const userId = req.session.user._id;
-        let { addressIndex, couponCode, paymentMethod, finalAmount } = req.body; // Change const to let
+        let { addressIndex, couponCode, paymentMethod, finalAmount } = req.body;
 
         const cart = await Cart.findOne({ userId }).populate('items.productId');
         if (!cart || cart.items.length === 0) {
@@ -34,7 +34,7 @@ const placeOrder = async (req, res) => {
             const coupon = await Coupon.findOne({ name: couponCode, expireOn: { $gt: new Date() } });
             if (coupon && totalPrice >= coupon.minimumPrice) {
                 discount = coupon.offerPrice;
-                finalAmount = totalPrice - discount; // Now this reassignment works
+                finalAmount = totalPrice - discount; 
             } else {
                 return res.status(400).json({ success: false, message: 'Invalid or expired coupon' });
             }
@@ -129,7 +129,7 @@ const verifyPayment = async (req, res) => {
             })),
             totalPrice: cart.items.reduce((sum, item) => sum + item.totalPrice, 0),
             discount:discount,
-            finalAmount: finalAmount, // Use the finalAmount passed from the frontend
+            finalAmount: finalAmount, 
             paymentMethod: 'Razorpay',
             paymentStatus: 'Paid',
             razorpayPaymentId: razorpay_payment_id,
