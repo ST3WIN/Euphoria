@@ -8,7 +8,7 @@ const walletTransactionSchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ['credit', 'debit'],
+        enum: ['credit', 'debit','refunded'],
         required: true
     },
     amount: {

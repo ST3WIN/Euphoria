@@ -432,10 +432,8 @@ function placeOrder() {
     if (paymentMethod.value === 'razorpay') {
         initiateRazorpayPayment(orderData);
     } else if (paymentMethod.value === 'wallet') {
-        // Handle wallet payment
         submitOrder(orderData);
     } else {
-        // Handle COD
         submitOrder(orderData);
     }
 }
@@ -446,7 +444,6 @@ function initiateRazorpayPayment(orderData) {
         .replace('₹', '').replace(/,/g, ''));
         const discount = parseFloat(document.getElementById('discountAmount').textContent
         .replace('₹', '').replace(/,/g, ''));
-    // Add finalAmount to orderData
     orderData.finalAmount = finalAmount;
     orderData.discount = discount
     Swal.fire({
@@ -459,7 +456,6 @@ function initiateRazorpayPayment(orderData) {
         }
     });
 
-    // First create order on your backend
     fetch('/orders/place', {
         method: 'POST',
         headers: {
@@ -478,7 +474,7 @@ function initiateRazorpayPayment(orderData) {
         // Initialize Razorpay checkout
         const options = {
             key: data.key,
-            amount: data.amount * 100, // Amount in paise
+            amount: data.amount * 100, 
             currency: "INR",
             name: "Euphoria",
             description: "Order Payment",
@@ -487,9 +483,9 @@ function initiateRazorpayPayment(orderData) {
                 verifyPayment(response, data.orderId,finalAmount,discount);
             },
             prefill: {
-                name: "Customer Name", // You can pass customer details from your session
-                email: "customer@example.com",
-                contact: "9999999999"
+                name: "<%= user.firstName%>", 
+                email: "<%= user.email%>",
+                contact: "<%= user.phone%>"
             },
             theme: {
                 color: "#3399cc"

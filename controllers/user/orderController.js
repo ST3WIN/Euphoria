@@ -3,6 +3,8 @@ const Cart = require("../../models/cartSchema");
 const Product = require("../../models/productSchema");
 const Address = require("../../models/addressSchema");
 const Coupon = require("../../models/couponSchema")
+const Wallet = require("../../models/walletSchema")
+const User = require("../../models/userSchema")
 const crypto = require("crypto");
 const Razorpay = require("razorpay");
 
@@ -50,6 +52,24 @@ const placeOrder = async (req, res) => {
             await product.save();
         }
 
+        if (paymentMethod.toUpperCase() === "WALLET") {
+            const user = await User.findById(userId);
+            
+            if (!user) {
+                return res.status(404).json({ 
+                    success: false, 
+                    message: 'User not found' 
+                });
+            }
+
+            if (user.wallet < finalAmount) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: 'Insufficient wallet balance' 
+                });
+            }
+        }
+
         if (paymentMethod.toUpperCase() === "RAZORPAY") {
             // Create Razorpay order
             const actualFinalAmount = finalAmount || (totalPrice - (discount || 0));
@@ -67,7 +87,7 @@ const placeOrder = async (req, res) => {
                 amount: finalAmount,
                 key: process.env.RAZORPAY_ID_KEY
             });
-        } else {
+        } else if(paymentMethod.toUpperCase() === "COD") {
             // Create order for COD or Wallet
             const order = new Order({
                 orderItems: cart.items.map(item => ({
@@ -80,7 +100,7 @@ const placeOrder = async (req, res) => {
                 finalAmount,
                 address: userId,
                 paymentMethod: paymentMethod.toUpperCase(),
-                paymentStatus: 'Pending',
+                paymentStatus: 'Paid',
                 status: 'Pending',
                 createdOn: new Date(),
                 couponApplied: !!couponCode,
@@ -91,6 +111,46 @@ const placeOrder = async (req, res) => {
             await cart.save();
 
             return res.json({ success: true, message: 'Order placed successfully', orderId: order._id });
+        }else{
+            const order = new Order({
+                orderItems: cart.items.map(item => ({
+                    product: item.productId._id,
+                    quantity: item.quantity,
+                    price: item.totalPrice / item.quantity
+                })),
+                totalPrice,
+                discount,
+                finalAmount,
+                address: userId,
+                paymentMethod: paymentMethod.toUpperCase(),
+                paymentStatus: 'Paid', // Set to completed for wallet payment
+                status: 'Pending',
+                createdOn: new Date(),
+                couponApplied: !!couponCode,
+            });
+        
+            await order.save();
+            await User.findByIdAndUpdate(userId, {
+                $inc: { wallet: -finalAmount }
+            });
+
+            // Create wallet transaction record
+            const walletTransaction = new Wallet({
+                userId,
+                type: 'debit',
+                amount: finalAmount,
+                description: `Payment for order #${order._id}`,
+                orderId: order._id,
+            });
+            await walletTransaction.save();
+            cart.items = [];
+            await cart.save();
+
+            return res.json({ 
+                success: true, 
+                message: 'Order placed successfully', 
+                orderId: order._id 
+            });
         }
     } catch (error) {
         console.error('Place order error:', error);
