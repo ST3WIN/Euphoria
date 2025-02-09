@@ -409,6 +409,8 @@ function placeOrder() {
     const selectedAddress = document.querySelector('input[name="selectedAddress"]:checked');
     const couponInput = document.getElementById('couponCode');
     const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked');
+    const finalAmount = parseFloat(document.getElementById('finalTotal').textContent
+        .replace('₹', '').replace(/,/g, ''));
 
     if (!selectedAddress) {
         Swal.fire('Error', 'Please select a delivery address', 'error');
@@ -422,8 +424,9 @@ function placeOrder() {
 
     const orderData = {
         addressIndex: selectedAddress.value,
-        paymentMethod: paymentMethod.value.toUpperCase(), // Convert to uppercase to match schema enum
-        couponCode: couponInput ? couponInput.value.trim() : null
+        paymentMethod: paymentMethod.value.toUpperCase(), 
+        couponCode: couponInput ? couponInput.value.trim() : null,
+        finalAmount
     };
 
     if (paymentMethod.value === 'razorpay') {
