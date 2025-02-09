@@ -139,7 +139,7 @@ const placeOrder = async (req, res) => {
                 userId,
                 type: 'debit',
                 amount: finalAmount,
-                description: `Payment for order #${order._id}`,
+                description: `Payment for purchase`,
                 orderId: order._id,
             });
             await walletTransaction.save();
@@ -273,7 +273,27 @@ const cancelOrder = async (req, res) => {
             );
         }
 
+        if (order.paymentMethod === 'Razorpay' || order.paymentMethod === 'WALLET') {
+            // Add amount to user's wallet
+            await User.findByIdAndUpdate(userId, {
+                $inc: { wallet: order.finalAmount }
+            });
+
+            // Create wallet transaction record for refund
+            const walletTransaction = new Wallet({
+                userId,
+                type: 'refunded',
+                amount: order.finalAmount,
+                description: `Refund for cancelled order #${order._id}`,
+                orderId: order._id
+            });
+            await walletTransaction.save();
+        }
+
         order.status = 'Cancelled';
+        if (order.paymentStatus === 'Paid') {
+            order.paymentStatus = 'Refunded';
+        }
         await order.save();
 
         req.session.orderMessage = {

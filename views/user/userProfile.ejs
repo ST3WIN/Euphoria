@@ -606,7 +606,7 @@
                                 <form id="addMoneyForm" onsubmit="return handleAddMoney(event)">
                                     <div class="mb-3">
                                         <label for="amount" class="form-label">Enter Amount (₹)</label>
-                                        <input type="number" class="form-control" id="amount" name="amount" min="1" required>
+                                        <input  class="form-control" id="amount" name="amount" min="1" required>
                                     </div>
                                     <button type="submit" class="btn btn-primary">Add Money</button>
                                 </form>
@@ -1167,7 +1167,7 @@
             Swal.fire({
                 icon: 'error',
                 title: 'Invalid Amount',
-                text: 'Please enter a valid amount greater than 0'
+                text: 'Please enter a valid amount'
             });
             return false;
         }

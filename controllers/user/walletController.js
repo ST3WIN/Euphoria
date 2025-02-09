@@ -11,9 +11,19 @@ const addMoneyToWallet = async (req, res) => {
                 success: false,
                 message: 'Please enter a valid amount'
             });
+        }else if(amount<1000){
+            return res.json({
+                success: false,
+                message: 'Minimum amount to load is 1000'
+            })
+        }else if(amount>100000){
+            return res.json({
+                success: false,
+                message: 'Maxium amount to load is 1,00,000'
+            }) 
         }
 
-        // Update user's wallet balance
+        // Update user's wallet balance 
         const updatedUser = await User.findByIdAndUpdate(
             userId,
             {
