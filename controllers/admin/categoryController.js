@@ -67,9 +67,21 @@ const addCategoryOffer = async (req, res) => {
         if (!category) {
             return res.status(404).json({ status: false, message: "Category not found" });
         }
+
+        // Find all products in this category
+        const products = await Product.find({ category: categoryId });
+        
+        // Update each product's sale price and remove any existing product offers
+        for (const product of products) {
+            product.productOffer = 0; // Remove product offer
+            product.salePrice = product.regularPrice - Math.floor(product.regularPrice * (percentage / 100));
+            await product.save();
+        }
+
         await Category.updateOne({ _id: categoryId }, { $set: { categoryOffer: percentage } });
         res.json({ status: true });
     } catch (error) {
+        console.log("Add category offer error:", error);
         res.status(500).json({ status: false, message: "Internal Server Error" });
     }
 }
@@ -88,7 +100,7 @@ const removeCategoryOffer = async (req, res) => {
   
         if (products.length > 0) {
             for (const product of products) {
-                product.salePrice = product.oldPrice
+                product.salePrice = product.oldPrice || product.regularPrice; 
                 await product.save();
             }
         }

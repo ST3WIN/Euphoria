@@ -69,13 +69,12 @@ const addProducts = async (req, res) => {
                 }
             }
 
-            // Find category ID
+
             const categoryId = await Category.findOne({ name: products.category });
             if (!categoryId) {
                 return res.status(400).json("Invalid category");
             }
 
-            // Create and save the new product
             const newProduct = new Product({
                 productName: products.productName,
                 description: products.description,
@@ -144,12 +143,12 @@ const addProductOffer = async(req,res)=>{
         const {productId,percentage} = req.body
         const findProduct = await Product.findOne({_id:productId})
         const findCategory = await Category.findOne({_id:findProduct.category})
-        if(findCategory.categoryOffer>percentage){
-            return res.json({status:false,message:"This category contains an existing offer"})
+        
+        if(findCategory.categoryOffer > 0) {
+            return res.json({status:false, message:"This product belongs to a category with an existing offer"})
         }
         findProduct.salePrice = findProduct.regularPrice - Math.floor(findProduct.regularPrice * (percentage / 100));
         findProduct.productOffer = parseInt(percentage)
-        console.log(percentage)
         await findProduct.save()
         findCategory.categoryOffer = 0
         await findCategory.save()

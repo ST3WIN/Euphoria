@@ -6,58 +6,65 @@
             <div class="card shadow-sm">
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-hover align-middle">
+                        <table class="table table-hover">
                             <thead class="table-light">
                                 <tr>
-                                    <th style="width: 80px">Image</th>
-                                    <th>Product</th>
-                                    <th>Customer</th>
-                                    <th class="text-center">Quantity</th>
-                                    <th class="text-end">Price</th>
-                                    <th>Status</th>
-                                    <th class="text-center">Actions</th>
+                                    <th class="align-middle text-center" style="width: 80px">Image</th>
+                                    <th class="align-middle" style="width: 25%">Product</th>
+                                    <th class="align-middle" style="width: 20%">Customer</th>
+                                    <th class="align-middle text-center" style="width: 10%">Quantity</th>
+                                    <th class="align-middle text-end" style="width: 15%">Price</th>
+                                    <th class="align-middle" style="width: 15%">Status</th>
+                                    <th class="align-middle text-center" style="width: 15%">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <% orders.forEach(order => { %>
                                     <% order.orderItems.forEach(item => { %>
                                         <tr>
-                                            <td>
+                                            <td class="align-middle text-center">
                                                 <% if (item.product && item.product.productImage && item.product.productImage.length > 0) { %>
                                                     <img src="/uploads/product-images/<%= item.product.productImage[0] %>" 
                                                          alt="<%= item.product.productName %>" 
-                                                         class="img-thumbnail"
-                                                         style="width: 60px; height: 60px; object-fit: cover;">
+                                                         class="img-fluid"
+                                                         style="width: 50px; height: 50px; object-fit: cover;">
                                                 <% } else { %>
-                                                    <div class="bg-light rounded d-flex align-items-center justify-content-center" 
-                                                         style="width: 60px; height: 60px;">
-                                                        <i class="bi bi-image text-muted"></i>
+                                                    <div class="text-muted small">
+                                                        No Image
                                                     </div>
                                                 <% } %>
                                             </td>
-                                            <td>
-                                                <div class="fw-medium">
-                                                    <%= item.product ? item.product.productName : 'Product Unavailable' %>
-                                                </div>
-                                                <% if (item.product && item.product.brand) { %>
-                                                    <small class="text-muted"><%= item.product.brand %></small>
-                                                <% } %>
-                                            </td>
-                                            <td>
-                                                <div class="fw-medium">
-                                                    <% if (order.address) { %>
-                                                        <%= order.address.firstName %> <%= order.address.lastName || '' %>
-                                                    <% } else { %>
-                                                        N/A
+                                            <td class="align-middle">
+                                                <div class="d-flex flex-column">
+                                                    <span class="fw-medium">
+                                                        <%= item.product ? item.product.productName : 'Product Unavailable' %>
+                                                    </span>
+                                                    <% if (item.product && item.product.brand) { %>
+                                                        <small class="text-muted"><%= item.product.brand %></small>
                                                     <% } %>
                                                 </div>
-                                                <% if (order.address && order.address.phone) { %>
-                                                    <small class="text-muted"><%= order.address.phone %></small>
-                                                <% } %>
                                             </td>
-                                            <td class="text-center"><%= item.quantity %></td>
-                                            <td class="text-end">₹<%= item.price ? item.price.toLocaleString() : '0' %></td>
-                                            <td>
+                                            <td class="align-middle">
+                                                <div class="d-flex flex-column">
+                                                    <span class="fw-medium">
+                                                        <% if (order.address) { %>
+                                                            <%= order.address.firstName %> <%= order.address.lastName || '' %>
+                                                        <% } else { %>
+                                                            N/A
+                                                        <% } %>
+                                                    </span>
+                                                    <% if (order.address && order.address.phone) { %>
+                                                        <small class="text-muted"><%= order.address.phone %></small>
+                                                    <% } %>
+                                                </div>
+                                            </td>
+                                            <td class="align-middle text-center fw-medium">
+                                                <%= item.quantity %>
+                                            </td>
+                                            <td class="align-middle text-end fw-medium">
+                                                ₹<%= item.price ? item.price.toLocaleString() : '0' %>
+                                            </td>
+                                            <td class="align-middle">
                                                 <select class="form-select form-select-sm" 
                                                         onchange="updateOrderStatus(this, '<%= order._id %>')"
                                                         <%= order.status === 'Cancelled' ? 'disabled' : '' %>>
@@ -67,13 +74,13 @@
                                                     <option value="Delivered" <%= order.status === 'Delivered' ? 'selected' : '' %>>Delivered</option>
                                                 </select>
                                             </td>
-                                            <td>
+                                            <td class="align-middle text-center">
                                                 <% if (order.status === 'Cancelled') { %>
-                                                    <button class="btn btn-sm btn-secondary" disabled>
+                                                    <button class="btn btn-sm btn-secondary w-75" disabled>
                                                         Cancelled
                                                     </button>
                                                 <% } else { %>
-                                                    <button class="btn btn-sm btn-danger" 
+                                                    <button class="btn btn-sm btn-danger w-75" 
                                                             onclick="cancelOrder('<%= order._id %>')"
                                                             <%= order.status === 'Delivered' ? 'disabled' : '' %>>
                                                         Cancel

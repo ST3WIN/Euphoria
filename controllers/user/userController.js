@@ -23,10 +23,8 @@ const loadHomePage = async(req,res)=>{
         quantity:{$gte:0}}).limit(7) 
         productData.sort((a,b)=>new Date(b.createdOn-new Date(a.createdOn)))
         // productData = productData.slice(0,4)
-        console.log("Session User:", req.session.user);
         if(user){
             const userData = await User.findById(user)
-            console.log(userData)
             res.render("home",{user:userData,products:productData,categories})
         }else{
             return res.render("home",{user:null,products:productData,categories})

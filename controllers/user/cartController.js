@@ -166,6 +166,20 @@ const updateQuantity = async (req, res) => {
                 message: 'Item not found in cart'
             });
         }
+
+        const product = await Product.findById(productId);
+        if (!product) {
+            return res.status(404).json({
+                success: false,
+                message: 'Product not found'
+            });
+        }
+        if (quantity > product.quantity) {
+            return res.status(400).json({
+                success: false,
+                message: `Insufficient stock. Only ${product.quantity} left in stock`
+            });
+        }
         
         cartItem.quantity = quantity;
         cartItem.totalPrice = quantity * cartItem.price;

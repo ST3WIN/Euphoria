@@ -45,6 +45,7 @@ const placeOrder = async (req, res) => {
         for (const item of cart.items) {
             const product = await Product.findById(item.productId._id);
             if (!product || product.quantity < item.quantity) {
+                console.log("Failed")
                 return res.status(400).json({ success: false, message: `Insufficient stock for ${item.productId.productName}` });
             }
 
@@ -100,7 +101,7 @@ const placeOrder = async (req, res) => {
                 finalAmount,
                 address: userId,
                 paymentMethod: paymentMethod.toUpperCase(),
-                paymentStatus: 'Paid',
+                paymentStatus: 'Pending',
                 status: 'Pending',
                 createdOn: new Date(),
                 couponApplied: !!couponCode,
@@ -284,7 +285,7 @@ const cancelOrder = async (req, res) => {
                 userId,
                 type: 'refunded',
                 amount: order.finalAmount,
-                description: `Refund for cancelled order #${order._id}`,
+                description: `Refund for cancelled order`,
                 orderId: order._id
             });
             await walletTransaction.save();

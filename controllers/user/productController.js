@@ -7,7 +7,6 @@ const productDetails = async(req,res)=>{
     try {
         const user = req.session.user || null
         const userData = await User.findById(user)
-        console.log(userData)
         const productId = req.query.id 
         const product = await Product.findById(productId).populate("category")
         const findCategory = await product.category
@@ -49,7 +48,6 @@ const getAllBrands = async (req, res) => {
         })
             if(user){
             const userData = await User.findById(user)
-            console.log(userData)
             if (brandData) {
                 res.render("brandPage",{
                     user:userData,

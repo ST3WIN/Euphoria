@@ -148,10 +148,11 @@
                         <!-- Offer -->
                         <% if (product.productOffer && product.productOffer > 0) { %>
                             <h6 style="color: red;"><b><%= product.productOffer %>% off</b></h6>
-                        <% } else { %>
+                        <% } else if(category.categoryOffer> 0) { %> 
+                            <h6><b><%= category.categoryOffer%>% off on <%= category.name%> category</b></h6>
+                        <% }else{ %>
                             <h6><b>NO DISCOUNT</b></h6>
                         <% } %>
-
                         <!-- Price -->
                         <div class="price-section">
                             <% if (product.salePrice === product.regularPrice) { %>
