@@ -571,11 +571,18 @@
                                             <strong>Total: ₹<%= order.finalAmount.toLocaleString('en-IN') %></strong>
                                         </div>
                                         <div>
-                                            <% if (order.status === 'Pending' || order.status === 'Processing') { %>
+                                            <% if (order.status === 'Pending' || order.status === 'Processing' || order.status === 'Shipped') { %>
                                                 <form action="/orders/cancel/<%= order._id %>" method="POST" 
                                                       onsubmit="return confirmCancel(event)">
                                                     <button type="submit" class="btn btn-danger btn-sm">
                                                         Cancel Order
+                                                    </button>
+                                                </form>
+                                            <% } else if (order.status === 'Delivered') { %>
+                                                <form action="/orders/return/<%= order._id %>" method="POST" 
+                                                      onsubmit="return confirmReturn(event)">
+                                                    <button type="submit" class="btn btn-warning btn-sm">
+                                                        Return Order
                                                     </button>
                                                 </form>
                                             <% } %>
@@ -631,14 +638,10 @@
                                                     <tr>
                                                         <td><%= new Date(transaction.timestamp).toLocaleDateString() %></td>
                                                         <td><%= transaction.description %></td>
-                                                        <td class="<%= transaction.type === 'credit' ? 'text-success' : 'text-danger' %>">
-                                                            <%= transaction.type === 'credit' ? '+' : '-' %>₹<%= transaction.amount %>
+                                                        <td class="<%= (transaction.type === 'credit' || transaction.type === 'refunded') ? 'text-success' : 'text-danger' %>">
+                                                            <%= (transaction.type === 'credit' || transaction.type === 'refunded') ? '+' : '-' %>₹<%= transaction.amount.toLocaleString() %>
                                                         </td>
-                                                        <td>
-                                                            <span class="badge <%= transaction.type === 'credit' ? 'bg-success' : 'bg-danger' %>">
-                                                                <%= transaction.type %>
-                                                            </span>
-                                                        </td>
+                                                        <td><%= transaction.type %></td>
                                                     </tr>
                                                 <% }) %>
                                             </tbody>
@@ -1086,7 +1089,7 @@
                                     <strong>Total: ₹${order.finalAmount.toLocaleString('en-IN')}</strong>
                                 </div>
                                 <div>
-                                    ${order.status === 'Pending' || order.status === 'Processing' ? `
+                                    ${order.status === 'Pending' || order.status === 'Processing' || order.status === 'Shipped' ? `
                                         <button class="btn btn-danger btn-sm" onclick="cancelOrder('${order.orderId}')">
                                             Cancel Order
                                         </button>
@@ -1203,6 +1206,27 @@
             });
         }
         
+        return false;
+    }
+</script>
+<script>
+    function confirmReturn(event) {
+        event.preventDefault();
+        const form = event.target;
+        
+        Swal.fire({
+            title: 'Return Order',
+            text: 'Are you sure you want to return this order?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, return it!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                form.submit();
+            }
+        });
         return false;
     }
 </script>

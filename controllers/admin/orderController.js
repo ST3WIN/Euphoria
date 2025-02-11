@@ -1,4 +1,7 @@
-const Order = require('../../models/orderSchema');
+const Order = require('../../models/orderSchema')
+const User = require('../../models/userSchema')
+const Wallet = require('../../models/walletSchema') 
+const Product = require('../../models/productSchema')
 
 const getOrders = async (req, res) => {
     try {
@@ -26,38 +29,48 @@ const getOrders = async (req, res) => {
 const updateOrderStatus = async (req, res) => {
     try {
         const { orderId, status } = req.body;
-        
-        // Validate the status
-        const validStatuses = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
-        if (!validStatuses.includes(status)) {
-            return res.json({ success: false, error: 'Invalid status' });
-        }
-
-        // Check if order exists and is not already cancelled
         const order = await Order.findById(orderId);
+
         if (!order) {
-            return res.json({ success: false, error: 'Order not found' });
+            return res.status(404).json({ success: false, message: 'Order not found' });
         }
-        if (order.status === 'Cancelled') {
-            return res.json({ success: false, error: 'Cannot update cancelled order' });
+        if (status === 'Returned' && order.status === 'Return Requested') {
+            const userId = order.address;
+            await User.findByIdAndUpdate(userId, {
+                $inc: { wallet: order.finalAmount }
+            });
+            const walletTransaction = new Wallet({
+                userId,
+                type: 'refunded',
+                amount: order.finalAmount,
+                description: `Refund for returned order`,
+                orderId: order._id
+            });
+            await walletTransaction.save();
+            for (const item of order.orderItems) {
+                await Product.updateOne(
+                    { _id: item.product },
+                    { $inc: { quantity: item.quantity } }
+                );
+            }
         }
 
-        // Update the order status
         order.status = status;
+        if (status === 'Returned' && order.paymentStatus === 'Paid') {
+            order.paymentStatus = 'Refunded';
+        }
         await order.save();
 
-        res.json({ success: true });
+        res.json({ success: true, message: 'Order status updated successfully' });
     } catch (error) {
-        console.error('Error updating order status:', error);
-        res.json({ success: false, error: error.message });
+        console.error('Update order status error:', error);
+        res.status(500).json({ success: false, message: 'Failed to update order status' });
     }
-}
+};
 
 const cancelOrder = async (req, res) => {
     try {
         const { orderId } = req.body;
-
-        // Check if order exists and can be cancelled
         const order = await Order.findById(orderId);
         if (!order) {
             return res.json({ success: false, error: 'Order not found' });
@@ -68,8 +81,6 @@ const cancelOrder = async (req, res) => {
         if (order.status === 'Cancelled') {
             return res.json({ success: false, error: 'Order is already cancelled' });
         }
-
-        // Update the order status to cancelled
         order.status = 'Cancelled';
         await order.save();
 

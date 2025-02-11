@@ -102,6 +102,7 @@ router.post("/apply-coupon",auth.userAuth,couponController.applyCoupon)
 // Orders
 router.post("/orders/place",auth.userAuth,orderController.placeOrder)
 router.post("/orders/cancel/:orderId",auth.userAuth,orderController.cancelOrder)
+router.post("/orders/return/:orderId",auth.userAuth,orderController.returnOrder)
 router.post("/orders/verify-payment",auth.userAuth,orderController.verifyPayment)
 
 module.exports = router

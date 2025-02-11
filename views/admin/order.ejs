@@ -65,25 +65,33 @@
                                                 ₹<%= item.price ? item.price.toLocaleString() : '0' %>
                                             </td>
                                             <td class="align-middle">
-                                                <select class="form-select form-select-sm" 
-                                                        onchange="updateOrderStatus(this, '<%= order._id %>')"
-                                                        <%= order.status === 'Cancelled' ? 'disabled' : '' %>>
+                                                <select class="form-select form-select-sm status-select" 
+                                                        onchange="updateStatus('<%= order._id %>', this.value)"
+                                                        <%= order.status === 'Cancelled' || order.status === 'Returned' ? 'disabled' : '' %>>
                                                     <option value="Pending" <%= order.status === 'Pending' ? 'selected' : '' %>>Pending</option>
                                                     <option value="Processing" <%= order.status === 'Processing' ? 'selected' : '' %>>Processing</option>
                                                     <option value="Shipped" <%= order.status === 'Shipped' ? 'selected' : '' %>>Shipped</option>
                                                     <option value="Delivered" <%= order.status === 'Delivered' ? 'selected' : '' %>>Delivered</option>
+                                                    <option value="Return Requested" <%= order.status === 'Return Requested' ? 'selected' : '' %>>Return Requested</option>
+                                                    <option value="Returned" <%= order.status === 'Returned' ? 'selected' : '' %>>Returned</option>
+                                                    <option value="Cancelled" <%= order.status === 'Cancelled' ? 'selected' : '' %>>Cancelled</option>
                                                 </select>
                                             </td>
                                             <td class="align-middle text-center">
-                                                <% if (order.status === 'Cancelled') { %>
+                                                <% if (order.status === 'Cancelled' || order.status === 'Returned') { %>
                                                     <button class="btn btn-sm btn-secondary w-75" disabled>
-                                                        Cancelled
+                                                        <%= order.status === 'Cancelled' ? 'Cancelled' : 'Returned' %>
+                                                    </button>
+                                                <% } else if (order.status === 'Return Requested') { %>
+                                                    <button class="btn btn-sm btn-success w-75" 
+                                                            onclick="approveReturn('<%= order._id %>')">
+                                                        Approve Return
                                                     </button>
                                                 <% } else { %>
                                                     <button class="btn btn-sm btn-danger w-75" 
                                                             onclick="cancelOrder('<%= order._id %>')"
                                                             <%= order.status === 'Delivered' ? 'disabled' : '' %>>
-                                                        Cancel
+                                                        Cancel Order
                                                     </button>
                                                 <% } %>
                                             </td>
@@ -103,9 +111,8 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.32/dist/sweetalert2.all.min.js"></script>
 
 <script>
-    async function updateOrderStatus(selectElement, orderId) {
+    async function updateStatus(orderId, status) {
         try {
-            const status = selectElement.value;
             const response = await fetch('/admin/orders/updateStatus', {
                 method: 'POST',
                 headers: {
@@ -125,7 +132,7 @@
 
                 // Disable cancel button if order is delivered
                 if (status === 'Delivered') {
-                    const cancelBtn = selectElement.closest('tr').querySelector('.btn-danger');
+                    const cancelBtn = document.querySelector(`select[onchange="updateStatus('${orderId}', this.value)"]`).closest('tr').querySelector('.btn-danger');
                     if (cancelBtn) cancelBtn.disabled = true;
                 }
             } else {
@@ -211,6 +218,70 @@
                     confirmButtonColor: '#d33'
                 });
             }
+        }
+    }
+
+    async function approveReturn(orderId) {
+        try {
+            const result = await Swal.fire({
+                title: 'Approve Return?',
+                text: "This will process the refund and update inventory. Are you sure?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#28a745',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, approve return'
+            });
+
+            if (result.isConfirmed) {
+                const response = await fetch('/admin/orders/updateStatus', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        orderId: orderId,
+                        status: 'Returned'
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    await Swal.fire({
+                        title: 'Return Approved!',
+                        text: 'The order has been returned and refund processed.',
+                        icon: 'success',
+                        confirmButtonColor: '#28a745'
+                    });
+
+                    // Update UI without reloading
+                    const row = document.querySelector(`button[onclick="approveReturn('${orderId}')"]`).closest('tr');
+                    const statusSelect = row.querySelector('select');
+                    const approveBtn = row.querySelector('.btn-success');
+                    
+                    // Update status to Returned
+                    statusSelect.value = 'Returned';
+                    statusSelect.disabled = true;
+                    
+                    // Replace approve button with Returned button
+                    const newButton = document.createElement('button');
+                    newButton.className = 'btn btn-sm btn-secondary w-75';
+                    newButton.disabled = true;
+                    newButton.textContent = 'Returned';
+                    approveBtn.parentNode.replaceChild(newButton, approveBtn);
+                } else {
+                    throw new Error(data.message || 'Failed to approve return');
+                }
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            Swal.fire({
+                title: 'Error!',
+                text: error.message || 'Failed to approve return',
+                icon: 'error',
+                confirmButtonColor: '#d33'
+            });
         }
     }
 </script>

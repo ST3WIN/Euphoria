@@ -89,7 +89,6 @@ const placeOrder = async (req, res) => {
                 key: process.env.RAZORPAY_ID_KEY
             });
         } else if(paymentMethod.toUpperCase() === "COD") {
-            // Create order for COD or Wallet
             const order = new Order({
                 orderItems: cart.items.map(item => ({
                     product: item.productId._id,
@@ -135,7 +134,6 @@ const placeOrder = async (req, res) => {
                 $inc: { wallet: -finalAmount }
             });
 
-            // Create wallet transaction record
             const walletTransaction = new Wallet({
                 userId,
                 type: 'debit',
@@ -181,7 +179,6 @@ const verifyPayment = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Cart is empty' });
         }
 
-        // Create and save the order
         const order = new Order({
             orderItems: cart.items.map(item => ({
                 product: item.productId,
@@ -201,12 +198,9 @@ const verifyPayment = async (req, res) => {
 
         await order.save();
 
-        // Clear the cart
         cart.items = [];
         await cart.save();
-        
 
-        // Send success response
         res.json({ 
             success: true, 
             message: "Payment verified successfully",
@@ -258,7 +252,7 @@ const cancelOrder = async (req, res) => {
             return res.redirect('/userProfile');
         }
 
-        if (order.status !== 'Pending' && order.status !== 'Processing') {
+        if (order.status !== 'Pending' && order.status !== 'Processing' && order.status !== 'Shipped') {
             req.session.orderMessage = {
                 type: 'error',
                 message: 'Order cannot be cancelled at this stage'
@@ -275,12 +269,9 @@ const cancelOrder = async (req, res) => {
         }
 
         if (order.paymentMethod === 'Razorpay' || order.paymentMethod === 'WALLET') {
-            // Add amount to user's wallet
             await User.findByIdAndUpdate(userId, {
                 $inc: { wallet: order.finalAmount }
             });
-
-            // Create wallet transaction record for refund
             const walletTransaction = new Wallet({
                 userId,
                 type: 'refunded',
@@ -313,9 +304,50 @@ const cancelOrder = async (req, res) => {
     }
 };
 
+const returnOrder = async (req, res) => {
+    try {
+        const orderId = req.params.orderId;
+        const userId = req.session.user;
+
+        const order = await Order.findOne({ _id: orderId, address: userId });
+        if (!order) {
+            req.session.orderMessage = {
+                type: 'error',
+                message: 'Order not found'
+            };
+            return res.redirect('/userProfile');
+        }
+        if (order.status !== 'Delivered') {
+            req.session.orderMessage = {
+                type: 'error',
+                message: 'Order must be delivered before it can be returned'
+            };
+            return res.redirect('/userProfile');
+        }
+
+        order.status = 'Return Requested';
+        await order.save();
+
+        req.session.orderMessage = {
+            type: 'success',
+            message: 'Return request submitted successfully'
+        };
+        res.redirect('/userProfile');
+
+    } catch (error) {
+        console.error('Return order error:', error);
+        req.session.orderMessage = {
+            type: 'error',
+            message: 'Failed to submit return request'
+        };
+        res.redirect('/userProfile');
+    }
+};
+
 module.exports = {
     placeOrder,
-    getUserOrders,
     cancelOrder,
-    verifyPayment
+    returnOrder,
+    verifyPayment,
+    getUserOrders
 };
