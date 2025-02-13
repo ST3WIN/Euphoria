@@ -300,17 +300,17 @@
                 <div class="row">
                     <div class="pagination">
                         <% if (currentPage > 1) { %>
-                          <a class="btn" href="/shop?page=<%= currentPage - 1 %>">Prev</a>
+                          <a class="btn" href="/shop?page=<%= currentPage - 1 %><%= selectedCategory ? '&category=' + selectedCategory : '' %><%= selectedBrand ? '&brand=' + selectedBrand : '' %><%= selectedMinPrice ? '&minPrice=' + selectedMinPrice : '' %><%= selectedMaxPrice ? '&maxPrice=' + selectedMaxPrice : '' %><%= searchQuery ? '&search=' + searchQuery : '' %><%= selectedSort && selectedSort !== 'default' ? '&sort=' + selectedSort : '' %>">Prev</a>
                         <% } %>
                    
                    
-                        <% for (let i = 1; i <= totalPages; i++) { %>
-                          <a class="btn <%= currentPage === i ? 'active' : '' %>" href="/shop?page=<%= i %>"><%= i %></a>
+                        <% for (let i = startPage; i <= endPage; i++) { %>
+                          <a class="btn <%= currentPage === i ? 'active' : '' %>" href="/shop?page=<%= i %><%= selectedCategory ? '&category=' + selectedCategory : '' %><%= selectedBrand ? '&brand=' + selectedBrand : '' %><%= selectedMinPrice ? '&minPrice=' + selectedMinPrice : '' %><%= selectedMaxPrice ? '&maxPrice=' + selectedMaxPrice : '' %><%= searchQuery ? '&search=' + searchQuery : '' %><%= selectedSort && selectedSort !== 'default' ? '&sort=' + selectedSort : '' %>"><%= i %></a>
                         <% } %>
                    
                    
                         <% if (currentPage < totalPages) { %>
-                          <a class="btn" href="/shop?page=<%= currentPage + 1 %>">Next</a>
+                          <a class="btn" href="/shop?page=<%= currentPage + 1 %><%= selectedCategory ? '&category=' + selectedCategory : '' %><%= selectedBrand ? '&brand=' + selectedBrand : '' %><%= selectedMinPrice ? '&minPrice=' + selectedMinPrice : '' %><%= selectedMaxPrice ? '&maxPrice=' + selectedMaxPrice : '' %><%= searchQuery ? '&search=' + searchQuery : '' %><%= selectedSort && selectedSort !== 'default' ? '&sort=' + selectedSort : '' %>">Next</a>
                         <% } %>
                       </div>
                    

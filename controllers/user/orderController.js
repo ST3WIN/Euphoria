@@ -30,7 +30,6 @@ const placeOrder = async (req, res) => {
 
         let totalPrice = cart.items.reduce((sum, item) => sum + item.totalPrice, 0);
         let discount = 0;
-        
 
         if (couponCode) {
             const coupon = await Coupon.findOne({ name: couponCode, expireOn: { $gt: new Date() } });

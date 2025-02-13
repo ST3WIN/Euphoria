@@ -16,6 +16,9 @@ router.post("/login",adminController.login)
 router.get("/",auth.adminAuth,adminController.loadDashBoard)
 router.get("/logout",adminController.logout)
 
+// Sales Report Downloads
+router.get("/download-sales-report/:format", auth.adminAuth, adminController.downloadSalesReport)
+
 //Customer Management
 router.get("/users",auth.adminAuth,customerController.customerInfo)
 router.get("/blockCustomer",auth.adminAuth,customerController.customerBlock)

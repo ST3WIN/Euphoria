@@ -379,12 +379,12 @@ const loadShopPage = async (req, res) => {
             }
         }
 
-        // Pagination
+        
         const page = Math.max(1, parseInt(req.query.page) || 1);
         const limit = 12;
         const skip = (page - 1) * limit;
 
-        // Fetch products
+        
         const products = await Product.find(query)
             .sort(sort)
             .skip(skip)
