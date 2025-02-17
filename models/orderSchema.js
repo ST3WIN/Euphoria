@@ -45,6 +45,9 @@ const orderSchema = new Schema({
         enum: ['COD', 'Razorpay', 'WALLET'], 
         required: true 
     },
+    returnReason:{
+        type:String
+    },
     paymentStatus: { 
         type: String, 
         enum: ['Pending', 'Paid', 'Failed','Refunded'], 

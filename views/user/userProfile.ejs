@@ -1219,14 +1219,34 @@
         
         Swal.fire({
             title: 'Return Order',
-            text: 'Are you sure you want to return this order?',
+            text: 'Please provide a reason for returning this order',
+            input: 'textarea',
+            inputPlaceholder: 'Enter your return reason here...',
+            inputAttributes: {
+                required: true
+            },
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#3085d6',
             cancelButtonColor: '#d33',
-            confirmButtonText: 'Yes, return it!'
+            confirmButtonText: 'Submit Return Request',
+            showLoaderOnConfirm: true,
+            preConfirm: (returnReason) => {
+                if (!returnReason) {
+                    Swal.showValidationMessage('Please enter a return reason')
+                    return false;
+                }
+                return returnReason;
+            }
         }).then((result) => {
             if (result.isConfirmed) {
+                // Add a hidden input field for the return reason
+                const reasonInput = document.createElement('input');
+                reasonInput.type = 'hidden';
+                reasonInput.name = 'returnReason';
+                reasonInput.value = result.value;
+                form.appendChild(reasonInput);
+                
                 form.submit();
             }
         });

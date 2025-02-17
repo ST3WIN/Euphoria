@@ -5,7 +5,7 @@ const Product = require('../../models/productSchema')
 
 const getOrders = async (req, res) => {
     try {
-        const orders = await Order.find()
+        const orders = await Order.find({ paymentStatus: { $ne: 'Failed' } })
             .populate({
                 path: 'orderItems.product',
                 select: 'productName productImage brand'
@@ -14,6 +14,7 @@ const getOrders = async (req, res) => {
                 path: 'userId',
                 select: 'firstName lastName email phone'  // Include both firstName and lastName
             })
+            .select('orderItems userId status returnReason finalAmount paymentStatus')
             .sort({ createdOn: -1 });
         
         res.render('order', { 

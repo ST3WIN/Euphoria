@@ -84,7 +84,8 @@
                                                     </button>
                                                 <% } else if (order.status === 'Return Requested') { %>
                                                     <button class="btn btn-sm btn-success w-75" 
-                                                            onclick="approveReturn('<%= order._id %>')">
+                                                            onclick="approveReturn('<%= order._id %>', '<%= order.returnReason %>')"
+                                                            data-return-reason="<%= order.returnReason %>">
                                                         Approve Return
                                                     </button>
                                                 <% } else { %>
@@ -221,11 +222,14 @@
         }
     }
 
-    async function approveReturn(orderId) {
+    async function approveReturn(orderId, returnReason) {
         try {
             const result = await Swal.fire({
                 title: 'Approve Return?',
-                text: "This will process the refund and update inventory. Are you sure?",
+                html: `
+                    <p>Return Reason: <strong>${returnReason || 'No reason provided'}</strong></p>
+                    <p>This will process the refund and update inventory. Are you sure?</p>
+                `,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#28a745',
@@ -256,7 +260,7 @@
                     });
 
                     // Update UI without reloading
-                    const row = document.querySelector(`button[onclick="approveReturn('${orderId}')"]`).closest('tr');
+                    const row = document.querySelector(`button[onclick="approveReturn('${orderId}', '${returnReason}')"]`).closest('tr');
                     const statusSelect = row.querySelector('select');
                     const approveBtn = row.querySelector('.btn-success');
                     

@@ -406,7 +406,16 @@ const cancelOrder = async (req, res) => {
 const returnOrder = async (req, res) => {
     try {
         const orderId = req.params.orderId;
-        const userId = req.session.user._id;  
+        const userId = req.session.user._id;
+        const returnReason = req.body.returnReason; // Get the return reason from the form
+
+        if (!returnReason) {
+            req.session.orderMessage = {
+                type: 'error',
+                message: 'Return reason is required'
+            };
+            return res.redirect('/userProfile');
+        }
 
         const order = await Order.findOne({ _id: orderId, userId: userId });
         if (!order) {
@@ -425,7 +434,9 @@ const returnOrder = async (req, res) => {
             return res.redirect('/userProfile');
         }
 
+        // Update the order with return reason and status
         order.status = 'Return Requested';
+        order.returnReason = returnReason;
         await order.save();
 
         req.session.orderMessage = {
