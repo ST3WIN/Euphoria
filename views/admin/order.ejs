@@ -47,14 +47,14 @@
                                             <td class="align-middle">
                                                 <div class="d-flex flex-column">
                                                     <span class="fw-medium">
-                                                        <% if (order.address) { %>
-                                                            <%= order.address.firstName %> <%= order.address.lastName || '' %>
+                                                        <% if (order.userId && order.userId.firstName) { %>
+                                                            <%= order.userId.firstName %> <%= order.userId.lastName || '' %>
                                                         <% } else { %>
                                                             N/A
                                                         <% } %>
                                                     </span>
-                                                    <% if (order.address && order.address.phone) { %>
-                                                        <small class="text-muted"><%= order.address.phone %></small>
+                                                    <% if (order.userId && order.userId.phone) { %>
+                                                        <small class="text-muted"><%= order.userId.phone %></small>
                                                     <% } %>
                                                 </div>
                                             </td>
@@ -62,7 +62,7 @@
                                                 <%= item.quantity %>
                                             </td>
                                             <td class="align-middle text-end fw-medium">
-                                                ₹<%= item.price ? item.price.toLocaleString() : '0' %>
+                                                ₹<%= order.finalAmount ? order.finalAmount.toLocaleString() : '0' %>
                                             </td>
                                             <td class="align-middle">
                                                 <select class="form-select form-select-sm status-select" 

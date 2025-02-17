@@ -573,19 +573,22 @@
                                         <div>
                                             <% if (order.status === 'Pending' || order.status === 'Processing' || order.status === 'Shipped') { %>
                                                 <form action="/orders/cancel/<%= order._id %>" method="POST" 
-                                                      onsubmit="return confirmCancel(event)">
+                                                      onsubmit="return confirmCancel(event)" class="d-inline me-2">
                                                     <button type="submit" class="btn btn-danger btn-sm">
                                                         Cancel Order
                                                     </button>
                                                 </form>
                                             <% } else if (order.status === 'Delivered') { %>
                                                 <form action="/orders/return/<%= order._id %>" method="POST" 
-                                                      onsubmit="return confirmReturn(event)">
+                                                      onsubmit="return confirmReturn(event)" class="d-inline me-2">
                                                     <button type="submit" class="btn btn-warning btn-sm">
                                                         Return Order
                                                     </button>
                                                 </form>
                                             <% } %>
+                                            <a href="/orders/orderDetails/<%= order._id %>" class="btn btn-primary btn-sm">
+                                                View Details
+                                            </a>
                                         </div>
                                     </div>
                                 </div>

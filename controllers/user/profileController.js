@@ -177,7 +177,7 @@ const userProfile = async(req,res)=>{
         const userId = req.session.user || null
         const userData = await User.findById(userId)
         const addressData = await Address.findOne({userId:userId})
-        const orders = await Order.find({ address: userId })
+        const orders = await Order.find({ userId: userId })
             .populate({
                 path: 'orderItems.product',
                 select: 'productName productImage salePrice'

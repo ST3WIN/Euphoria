@@ -3,19 +3,19 @@ const Cart = require("../../models/cartSchema")
 
 const applyCoupon =  async(req, res) => {
     try {
-        const { couponCode } = req.body;
-        const userId = req.session.user._id;
+        const { couponCode } = req.body
+        const userId = req.session.user._id
 
-        const cart = await Cart.findOne({ userId }).populate('items.productId');
+        const cart = await Cart.findOne({ userId }).populate('items.productId')
         if (!cart || cart.items.length === 0) {
-            return res.status(400).json({ success: false, message: 'Cart is empty' });
+            return res.status(400).json({ success: false, message: 'Cart is empty' })
         }
 
         const totalPrice = cart.items.reduce((sum, item) => sum + item.totalPrice, 0);
 
-        const coupon = await Coupon.findOne({ name: couponCode, expireOn: { $gt: new Date() } });
+        const coupon = await Coupon.findOne({ name: couponCode, expireOn: { $gt: new Date() } })
         if (!coupon) {
-            return res.status(400).json({ success: false, message: 'Invalid or expired coupon' });
+            return res.status(400).json({ success: false, message: 'Invalid or expired coupon' })
         }
 
         // const hasUsedCoupon = await Coupon.findOne({
@@ -47,13 +47,13 @@ const applyCoupon =  async(req, res) => {
             message: 'Coupon applied successfully',
             discount,
             finalAmount
-        });
+        })
 
     } catch (error) {
         console.error('Apply coupon error:', error);
         res.status(500).json({ success: false, message: 'Failed to apply coupon' });
     }
-};
+}
 
 module.exports = {
     applyCoupon

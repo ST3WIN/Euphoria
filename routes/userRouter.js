@@ -104,5 +104,12 @@ router.post("/orders/place",auth.userAuth,orderController.placeOrder)
 router.post("/orders/cancel/:orderId",auth.userAuth,orderController.cancelOrder)
 router.post("/orders/return/:orderId",auth.userAuth,orderController.returnOrder)
 router.post("/orders/verify-payment",auth.userAuth,orderController.verifyPayment)
+router.post('/orders/payment-failed',auth.userAuth,orderController.handlePaymentFailure);
+router.get("/orders/orderDetails/:orderId",auth.userAuth,orderController.orderDetails)
+router.get('/orders/invoice/:orderId',auth.userAuth,orderController.generateInvoice)
+
+// Retry Payment Routes
+router.post('/order/create-razorpay-order', auth.userAuth, orderController.createRazorpayOrder)
+router.post('/order/verify-payment', auth.userAuth, orderController.verifyPayment)
 
 module.exports = router

@@ -317,6 +317,33 @@ async function editAddress(index) {
 
 let originalTotal = parseFloat(document.getElementById('finalTotal').textContent.replace('₹', '').replace(',', ''));
 
+function handleCODAvailability() {
+    const finalAmountText = document.getElementById('finalTotal').textContent;
+    const finalAmount = parseFloat(finalAmountText.replace('₹', '').replace(/,/g, ''));
+    const codRadio = document.getElementById('cod');
+    
+    if (finalAmount > 20000) {
+        codRadio.disabled = true;
+        codRadio.checked = false;
+        // If COD was selected, switch to online payment
+        if (codRadio.checked) {
+            document.getElementById('online').checked = true;
+        }
+        // Add a note explaining why COD is disabled
+        if (!document.getElementById('cod-note')) {
+            const noteDiv = document.createElement('div');
+            noteDiv.id = 'cod-note';
+            noteDiv.className = 'text-danger small mt-1';
+            noteDiv.textContent = 'Cash on Delivery is not available for orders above ₹20,000';
+            codRadio.parentElement.appendChild(noteDiv);
+        }
+    } else {
+        codRadio.disabled = false;
+        const note = document.getElementById('cod-note');
+        if (note) note.remove();
+    }
+}
+
 function applyCoupon() {
     const couponButton = document.getElementById('couponButton');
     const couponCodeInput = document.getElementById('couponCode');
@@ -329,6 +356,7 @@ function applyCoupon() {
         document.getElementById('finalTotal').textContent = `₹${originalTotal.toLocaleString('en-IN')}`;
         document.getElementById('couponMessage').innerHTML = '';
         couponButton.textContent = 'Apply';
+        handleCODAvailability()
         return;
     }
 
@@ -352,7 +380,8 @@ function applyCoupon() {
             document.getElementById('discountAmount').textContent = `₹${data.discount.toLocaleString('en-IN')}`;
             document.getElementById('finalTotal').textContent = `₹${data.finalAmount.toLocaleString('en-IN')}`;
             document.getElementById('couponMessage').innerHTML = `<span class="text-success">Coupon applied successfully!</span>`;
-            couponButton.textContent = 'Remove';
+            couponButton.textContent = 'Remove'
+            handleCODAvailability();
         } else {
             document.getElementById('couponMessage').innerHTML = `<span class="text-danger">${data.message}</span>`;
         }
@@ -406,13 +435,13 @@ function submitOrder(orderData) {
 }
 
 function placeOrder() {
-    const selectedAddress = document.querySelector('input[name="selectedAddress"]:checked');
+    const selectedAddressRadio = document.querySelector('input[name="selectedAddress"]:checked');
     const couponInput = document.getElementById('couponCode');
     const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked');
     const finalAmount = parseFloat(document.getElementById('finalTotal').textContent
         .replace('₹', '').replace(/,/g, ''));
 
-    if (!selectedAddress) {
+    if (!selectedAddressRadio) {
         Swal.fire('Error', 'Please select a delivery address', 'error');
         return;
     }
@@ -422,8 +451,11 @@ function placeOrder() {
         return;
     }
 
+    // Get the address details from data attributes instead of parsing text
+    const addressIndex = selectedAddressRadio.value;
+    
     const orderData = {
-        addressIndex: selectedAddress.value,
+        addressIndex: addressIndex,
         paymentMethod: paymentMethod.value.toUpperCase(), 
         couponCode: couponInput ? couponInput.value.trim() : null,
         finalAmount
@@ -442,10 +474,11 @@ function initiateRazorpayPayment(orderData) {
     // Show loading state
     const finalAmount = parseFloat(document.getElementById('finalTotal').textContent
         .replace('₹', '').replace(/,/g, ''));
-        const discount = parseFloat(document.getElementById('discountAmount').textContent
+    const discount = parseFloat(document.getElementById('discountAmount').textContent
         .replace('₹', '').replace(/,/g, ''));
     orderData.finalAmount = finalAmount;
-    orderData.discount = discount
+    orderData.discount = discount;
+
     Swal.fire({
         title: 'Initiating Payment',
         text: 'Please wait...',
@@ -480,7 +513,13 @@ function initiateRazorpayPayment(orderData) {
             description: "Order Payment",
             order_id: data.orderId,
             handler: function (response) {
-                verifyPayment(response, data.orderId,finalAmount,discount);
+                verifyPayment(response, data.orderId, finalAmount, discount, data.addressIndex);
+            },
+            modal: {
+                ondismiss: function() {
+                    // Handle payment window dismissal
+                    handlePaymentFailure(data.orderId,data.addressIndex);
+                }
             },
             prefill: {
                 name: "<%= user.firstName%>", 
@@ -497,12 +536,7 @@ function initiateRazorpayPayment(orderData) {
         
         // Handle payment failures
         rzp1.on('payment.failed', function (response) {
-            Swal.fire({
-                title: 'Payment Failed',
-                text: 'The payment process failed. Please try again.',
-                icon: 'error',
-                confirmButtonText: 'OK'
-            });
+            handlePaymentFailure(data.orderId);
         });
     })
     .catch(error => {
@@ -516,7 +550,39 @@ function initiateRazorpayPayment(orderData) {
     });
 }
 
-function verifyPayment(paymentResponse, orderId, finalAmount,discount) {
+function handlePaymentFailure(orderId,addressIndex) {
+    fetch('/orders/payment-failed', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ orderId,addressIndex:addressIndex })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                title: 'Payment Failed',
+                text: 'Your payment was not successful. The order has been recorded as failed.',
+                icon: 'error',
+                confirmButtonText: 'OK'
+            }).then(() => {
+                window.location.href = '/userProfile#orders';
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        Swal.fire({
+            title: 'Error',
+            text: 'Something went wrong while handling payment failure',
+            icon: 'error',
+            confirmButtonText: 'OK'
+        });
+    });
+}
+
+function verifyPayment(paymentResponse, orderId, finalAmount, discount, addressIndex) {
     // Show loading state
     Swal.fire({
         title: 'Verifying Payment',
@@ -539,7 +605,8 @@ function verifyPayment(paymentResponse, orderId, finalAmount,discount) {
             razorpay_order_id: paymentResponse.razorpay_order_id,
             razorpay_signature: paymentResponse.razorpay_signature,
             finalAmount: finalAmount,
-            discount:discount // Pass finalAmount here
+            discount: discount,
+            addressIndex: addressIndex
         })
     })
     .then(response => response.json())
@@ -567,6 +634,9 @@ function verifyPayment(paymentResponse, orderId, finalAmount,discount) {
         });
     });
 }
+document.addEventListener('DOMContentLoaded', function() {
+    handleCODAvailability();
+});
 </script>
 
 <%- include("../../views/partials/user/footer.ejs") %>

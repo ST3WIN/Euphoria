@@ -28,11 +28,8 @@ const login = async(req,res)=>{
         const email = req.body.email
         const password = req.body.password
         const admin = await User.findOne({email,isAdmin:true})
-        console.log(admin)
         if(admin){
             const passwordMatch = await bcrypt.compare(password,admin.password)
-            console.log(passwordMatch);
-            
             if(passwordMatch){
                 req.session.admin = true
                 return res.redirect("/admin")
@@ -48,28 +45,165 @@ const login = async(req,res)=>{
     }
 }
 
-const loadDashBoard = async(req,res)=>{
-    if(req.session.admin){
+const loadDashBoard = async (req, res) => {
+    if (req.session.admin) {
         try {
-            const orders = await Order.find()
+            const { filterType, startDate, endDate } = req.query;
+            let dateQuery = {};
+
+            // Build date query based on filter type
+            if (filterType) {
+                const now = new Date();
+                switch (filterType) {
+                    case 'daily':
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        dateQuery = {
+                            createdOn: {
+                                $gte: today,
+                                $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000)
+                            }
+                        };
+                        break;
+
+                    case 'weekly':
+                        const weekStart = new Date();
+                        weekStart.setDate(now.getDate() - now.getDay());
+                        weekStart.setHours(0, 0, 0, 0);
+                        dateQuery = {
+                            createdOn: {
+                                $gte: weekStart,
+                                $lt: new Date()
+                            }
+                        };
+                        break;
+
+                    case 'monthly':
+                        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+                        dateQuery = {
+                            createdOn: {
+                                $gte: monthStart,
+                                $lt: new Date()
+                            }
+                        };
+                        break;
+
+                    case 'yearly':
+                        const yearStart = new Date(now.getFullYear(), 0, 1);
+                        dateQuery = {
+                            createdOn: {
+                                $gte: yearStart,
+                                $lt: new Date()
+                            }
+                        };
+                        break;
+
+                    case 'custom':
+                        if (startDate && endDate) {
+                            const endDateTime = new Date(endDate);
+                            endDateTime.setHours(23, 59, 59, 999);
+                            dateQuery = {
+                                createdOn: {
+                                    $gte: new Date(startDate),
+                                    $lte: endDateTime
+                                }
+                            };
+                        }
+                        break;
+                }
+            }
+
+            // Fetch orders with date filter
+            const orders = await Order.find(dateQuery)
                 .populate({
                     path: 'orderItems.product',
-                    select: 'productName productImage brand'
+                    select: 'productName productImage brand category',
+                    populate: {
+                        path: 'category',
+                        select: 'name'
+                    }
                 })
-                .populate({
-                    path: 'address',
-                    select: 'firstName lastName phone'
-                })
-                .select('orderItems status paymentMethod paymentStatus createdOn address discount')
+                .populate('userId', 'firstName lastName phone')
+                .select('orderItems status paymentMethod paymentStatus createdOn address userId discount')
                 .sort({ createdOn: -1 });
 
-            res.render("dashboard", { orders })
+            // Aggregate top selling products
+            const topProducts = orders.reduce((acc, order) => {
+                order.orderItems.forEach(item => {
+                    if (item.product) {
+                        const productId = item.product._id.toString();
+                        if (!acc[productId]) {
+                            acc[productId] = {
+                                name: item.product.productName || 'Unknown Product',
+                                quantity: 0
+                            };
+                        }
+                        acc[productId].quantity += item.quantity;
+                    }
+                });
+                return acc;
+            }, {});
+
+            // Aggregate top selling categories
+            const topCategories = orders.reduce((acc, order) => {
+                order.orderItems.forEach(item => {
+                    if (item.product && item.product.category && item.product.category.name) {
+                        const categoryName = item.product.category.name;
+                        if (!acc[categoryName]) {
+                            acc[categoryName] = 0;
+                        }
+                        acc[categoryName] += item.quantity;
+                    }
+                });
+                return acc;
+            }, {});
+
+            // Aggregate top selling brands
+            const topBrands = orders.reduce((acc, order) => {
+                order.orderItems.forEach(item => {
+                    if (item.product && item.product.brand) {
+                        const brand = item.product.brand;
+                        if (!acc[brand]) {
+                            acc[brand] = 0;
+                        }
+                        acc[brand] += item.quantity;
+                    }
+                });
+                return acc;
+            }, {});
+
+            // Get top 2 of each
+            const top2Products = Object.entries(topProducts)
+                .sort((a, b) => b[1].quantity - a[1].quantity)
+                .slice(0, 2);
+
+            const top2Categories = Object.entries(topCategories)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 2);
+
+            const top2Brands = Object.entries(topBrands)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 2);
+
+            res.render("dashboard", { 
+                orders,
+                filterInfo: {
+                    type: filterType || 'all',
+                    startDate: startDate || '',
+                    endDate: endDate || ''
+                },
+                topProducts: top2Products,
+                topCategories: top2Categories,
+                topBrands: top2Brands,
+                currentFilter: filterType || 'all'
+            })
+            
         } catch (error) {
             console.error("Error loading dashboard:", error);
-            res.redirect("/pageError")
+            res.redirect("/pageError");
         }
-    }else{
-        res.redirect("/admin/login")
+    } else {
+        res.redirect("/admin/login");
     }
 }
 
@@ -77,13 +211,13 @@ const logout = async(req,res)=>{
     try {
         req.session.destroy(err =>{
             if(err){
-                console.log("Error destroying session admin",err);
+                // console.log("Error destroying session admin",err);
                 return res.redirect("/pageError")
             }
             res.redirect("/admin/login")
         })
     } catch (error) {
-        console.log("admin logout error",error);
+        console.log("admin logout error",error)
         res.redirect("/pageError")
     }
 }
@@ -91,46 +225,50 @@ const logout = async(req,res)=>{
 const downloadSalesReport = async (req, res) => {
     try {
         const format = req.params.format;
-        const orders = await Order.find()
-            .populate({
-                path: 'orderItems.product',
-                select: 'productName productImage brand'
-            })
-            .populate({
-                path: 'address',
-                select: 'firstName lastName phone'
-            })
-            .sort({ createdOn: -1 });
-
-        // Calculate totals
-        let totalPrice = 0;
-        let totalDiscount = 0;
-        orders.forEach(order => {
-            order.orderItems.forEach(item => {
-                totalPrice += (item.price * item.quantity);
-            });
-            totalDiscount += (order.discount || 0);
-        });
-        const netProfit = totalPrice - totalDiscount;
-
-        // Function to format currency
-        function formatIndianPrice(number) {
-            const formattedNumber = number.toLocaleString('en-IN', {
-                maximumFractionDigits: 2,
-                minimumFractionDigits: 2
-            });
-            return `Rs. ${formattedNumber}/-`;
+        const { filterType, startDate, endDate } = req.query;
+        
+        const now = new Date();
+        let dateQuery = {};
+        
+        // Date filtering logic
+        if (filterType) {
+            switch (filterType) {
+                case 'daily':
+                    dateQuery = { createdOn: { $gte: new Date().setHours(0, 0, 0, 0), $lt: new Date().setHours(23, 59, 59, 999) } };
+                    break;
+                case 'weekly':
+                    const weekStart = new Date();
+                    weekStart.setDate(now.getDate() - now.getDay());
+                    weekStart.setHours(0, 0, 0, 0);
+                    dateQuery = { createdOn: { $gte: weekStart, $lt: now } };
+                    break;
+                case 'monthly':
+                    dateQuery = { createdOn: { $gte: new Date(now.getFullYear(), now.getMonth(), 1), $lt: now } };
+                    break;
+                case 'yearly':
+                    dateQuery = { createdOn: { $gte: new Date(now.getFullYear(), 0, 1), $lt: now } };
+                    break;
+                case 'custom':
+                    if (startDate && endDate) {
+                        dateQuery = { createdOn: { $gte: new Date(startDate), $lte: new Date(endDate).setHours(23, 59, 59, 999) } };
+                    }
+                    break;
+            }
         }
 
+        // Fetch orders based on the filter
+        const orders = await Order.find(dateQuery)
+            .populate({ path: 'orderItems.product', select: 'productName productImage brand' })
+            .populate('userId', 'firstName lastName phone')
+            .select('orderItems status paymentMethod paymentStatus createdOn address userId discount')
+            .sort({ createdOn: -1 });
+
         if (format === 'pdf') {
-            // Generate PDF
             const doc = new PDFDocument({ margin: 30, size: 'A4', layout: 'landscape' });
             
             // Set response headers
             res.setHeader('Content-Type', 'application/pdf');
-            res.setHeader('Content-Disposition', 'attachment; filename=sales-report.pdf');
-            
-            // Pipe the PDF to the response
+            res.setHeader('Content-Disposition', `attachment; filename=euphoria-sales-report-${filterType || 'all'}.pdf`);
             doc.pipe(res);
             
             // Add store name and title
@@ -141,13 +279,21 @@ const downloadSalesReport = async (req, res) => {
             
             // Add summary section
             doc.fontSize(12).text('Summary', { underline: true });
+            
+            // Calculate summary data
+            const totalOrders = orders.length;
+            const totalPrice = orders.reduce((sum, order) => 
+                sum + order.orderItems.reduce((itemSum, item) => itemSum + (item.price * item.quantity), 0), 0);
+            const totalDiscount = orders.reduce((sum, order) => sum + (order.discount || 0), 0);
+            const netProfit = totalPrice - totalDiscount;
+            
             const summaryTable = {
                 headers: ['Total Orders', 'Total Price', 'Total Discounts', 'Net Profit'],
                 rows: [[
-                    orders.length,
-                    formatIndianPrice(totalPrice),
-                    formatIndianPrice(totalDiscount),
-                    formatIndianPrice(netProfit)
+                    totalOrders,
+                    `Rs ${totalPrice.toFixed(2)}`,
+                    `Rs ${totalDiscount.toFixed(2)}`,
+                    `Rs ${netProfit.toFixed(2)}`
                 ]]
             };
             
@@ -195,160 +341,91 @@ const downloadSalesReport = async (req, res) => {
                     table.rows.push([
                         (index + 1).toString(),
                         new Date(order.createdOn).toLocaleDateString(),
-                        order.address ? `${order.address.firstName} ${order.address.lastName}` : 'N/A',
+                        order.userId ? `${order.userId.firstName} ${order.userId.lastName}` : 'N/A',
                         item.product ? item.product.productName : 'N/A',
                         item.quantity.toString(),
-                        formatIndianPrice(item.price * item.quantity),
-                        formatIndianPrice(order.discount || 0),
-                        formatIndianPrice((item.price * item.quantity) - (order.discount || 0))
+                        `Rs ${(item.price * item.quantity).toFixed(2)}`,
+                        `Rs ${(order.discount || 0).toFixed(2)}`,
+                        `Rs ${((item.price * item.quantity) - (order.discount || 0)).toFixed(2)}`
                     ]);
                 });
             });
             
-            // Calculate column widths
-            const columnWidths = [30, 80, 100, 150, 60, 100, 100, 100];
+            // Draw orders table
+            const columnWidth = 90;
             const startX = 30;
-            const rowHeight = 25;
-            let y = doc.y + 10;
-            
-            // Draw table headers with background
             currentX = startX;
-            doc.fillColor('#f0f0f0');
-            doc.rect(startX, y, doc.page.width - 60, rowHeight).fill();
-            doc.fillColor('#000000');
+            currentY = doc.y + 10;
             
-            table.headers.forEach((header, i) => {
-                doc.text(header, currentX, y + 7, {
-                    width: columnWidths[i],
+            // Draw headers
+            table.headers.forEach(header => {
+                doc.text(header, currentX, currentY, {
+                    width: columnWidth,
                     align: 'center'
                 });
-                currentX += columnWidths[i];
+                currentX += columnWidth;
             });
             
-            // Draw table rows
-            y += rowHeight;
-            table.rows.forEach((row, rowIndex) => {
-                // Add page if needed
-                if (y > doc.page.height - 50) {
-                    doc.addPage({ margin: 30, size: 'A4', layout: 'landscape' });
-                    y = 30;
-                    
-                    // Add store name and page title on new page
-                    doc.fontSize(16).text('EUPHORIA - Sales Report', { align: 'center' });
-                    doc.moveDown();
-                    
-                    // Redraw table headers
-                    currentX = startX;
-                    doc.fillColor('#f0f0f0');
-                    doc.rect(startX, y, doc.page.width - 60, rowHeight).fill();
-                    doc.fillColor('#000000');
-                    
-                    table.headers.forEach((header, i) => {
-                        doc.text(header, currentX, y + 7, {
-                            width: columnWidths[i],
-                            align: 'center'
-                        });
-                        currentX += columnWidths[i];
-                    });
-                    y += rowHeight;
-                }
-                
+            // Draw data rows
+            currentY += 20;
+            table.rows.forEach(row => {
                 currentX = startX;
-                
-                // Alternate row background
-                if (rowIndex % 2 === 0) {
-                    doc.fillColor('#f9f9f9');
-                    doc.rect(startX, y, doc.page.width - 60, rowHeight).fill();
-                    doc.fillColor('#000000');
-                }
-                
-                // Draw cell borders and content
-                row.forEach((cell, i) => {
-                    doc.text(cell, currentX, y + 7, {
-                        width: columnWidths[i],
-                        align: i === 0 ? 'center' : 'left'
+                row.forEach(cell => {
+                    doc.text(cell, currentX, currentY, {
+                        width: columnWidth,
+                        align: 'center'
                     });
-                    currentX += columnWidths[i];
+                    currentX += columnWidth;
                 });
+                currentY += 20;
                 
-                y += rowHeight;
+                // Add a new page if we're near the bottom
+                if (currentY > doc.page.height - 50) {
+                    doc.addPage();
+                    currentY = 50;
+                }
             });
             
-            // Add page numbers
-            const pages = doc.bufferedPageRange();
-            for (let i = 0; i < pages.count; i++) {
-                doc.switchToPage(i);
-                doc.fontSize(8).text(
-                    `Page ${i + 1} of ${pages.count}`,
-                    0,
-                    doc.page.height - 20,
-                    { align: 'center' }
-                );
-            }
-            
-            // Finalize PDF
             doc.end();
         } else if (format === 'excel') {
-            // Create new workbook and worksheet
             const workbook = new ExcelJS.Workbook();
             const worksheet = workbook.addWorksheet('Sales Report');
-            
-            // Add summary sheet
-            const summarySheet = workbook.addWorksheet('Summary');
-            summarySheet.addRow(['Sales Report Summary']);
-            summarySheet.addRow(['']);
-            summarySheet.addRow(['Total Orders', orders.length]);
-            summarySheet.addRow(['Total Price', `₹${totalPrice.toLocaleString('en-IN')}`]);
-            summarySheet.addRow(['Total Discounts', `₹${totalDiscount.toLocaleString('en-IN')}`]);
-            summarySheet.addRow(['Net Profit', `₹${netProfit.toLocaleString('en-IN')}`]);
-            
-            // Style the summary sheet
-            summarySheet.getCell('A1').font = { bold: true, size: 14 };
-            summarySheet.getColumn('A').width = 15;
-            summarySheet.getColumn('B').width = 20;
-            
-            // Add headers to main sheet
-            worksheet.columns = [
-                { header: 'Order #', key: 'orderNum', width: 10 },
-                { header: 'Date', key: 'date', width: 15 },
-                { header: 'Customer', key: 'customer', width: 20 },
-                { header: 'Product', key: 'product', width: 30 },
-                { header: 'Quantity', key: 'quantity', width: 10 },
-                { header: 'Price', key: 'price', width: 15 },
-                { header: 'Discount', key: 'discount', width: 15 },
-                { header: 'Final Amount', key: 'finalAmount', width: 15 }
-            ];
-            
-            // Style the header row
-            worksheet.getRow(1).font = { bold: true };
-            
-            // Add order data
-            orders.forEach((order, index) => {
-                order.orderItems.forEach(item => {
-                    worksheet.addRow({
-                        orderNum: index + 1,
-                        date: new Date(order.createdOn).toLocaleDateString(),
-                        customer: order.address ? `${order.address.firstName} ${order.address.lastName}` : 'N/A',
-                        product: item.product ? item.product.productName : 'N/A',
-                        quantity: item.quantity,
-                        price: `₹${(item.price * item.quantity).toLocaleString('en-IN')}`,
-                        discount: `₹${(order.discount || 0).toLocaleString('en-IN')}`,
-                        finalAmount: `₹${((item.price * item.quantity) - (order.discount || 0)).toLocaleString('en-IN')}`
-                    });
-                });
+
+            // Header
+            worksheet.addRow(['Euphoria Sales Report']).font = { size: 14, bold: true };
+            worksheet.addRow([`Filter: ${filterType || 'All Time'}`]);
+            if (filterType === 'custom') worksheet.addRow([`Date Range: ${startDate} to ${endDate}`]);
+            worksheet.addRow([]);
+
+            // Column Headers
+            worksheet.addRow(['Order ID', 'Date', 'Customer', 'Products', 'Amount (Rs)', 'Status']);
+
+            let totalAmount = 0;
+            orders.forEach(order => {
+                const orderAmount = order.orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0) - (order.discount || 0);
+                totalAmount += orderAmount;
+                const products = order.orderItems.map(item => item.product.productName).join(', ');
+                worksheet.addRow([
+                    order._id.toString().slice(-6),
+                    new Date(order.createdOn).toLocaleDateString(),
+                    `${order.userId.firstName} ${order.userId.lastName}`,
+                    products,
+                    `Rs ${orderAmount.toFixed(2)}`,
+                    order.status
+                ]);
             });
-            
-            // Set response headers
+
+            worksheet.addRow([]);
+            worksheet.addRow(['', '', '', 'Total Amount:', `Rs ${totalAmount.toFixed(2)}`]);
+            worksheet.columns.forEach(column => column.width = 20);
             res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-            res.setHeader('Content-Disposition', 'attachment; filename=sales-report.xlsx');
-            
-            // Write to response
+            res.setHeader('Content-Disposition', `attachment; filename=euphoria-sales-report-${filterType || 'all'}.xlsx`);
             await workbook.xlsx.write(res);
             res.end();
         }
     } catch (error) {
-        console.error("Error generating sales report:", error);
-        res.status(500).send("Error generating sales report");
+        console.error('Error generating sales report:', error);
+        res.status(500).send('Error generating sales report');
     }
 };
 
