@@ -12,6 +12,8 @@
         .product-img { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; }
         .badge { font-size: 0.9em; padding: 0.5em 0.75em; }
         .info-box { background-color: #f8f9fa; border-radius: 8px; padding: 1.5rem; margin-bottom: 1rem; }
+        .status-badge { font-size: 0.8em; padding: 0.4em 0.6em; margin-top: 0.5rem; }
+        .cancel-btn { font-size: 0.9em; padding: 0.3em 0.6em; }
     </style>
 </head>
 
@@ -25,16 +27,10 @@
                     <p class="text-muted mb-0"><i class="fas fa-calendar-alt me-2"></i><%= formatDate(order.createdOn) %></p>
                 </div>
                 <div>
-                    <a href="/orders/invoice/<%= order._id %>" class="btn btn-primary me-2">
+                    <a href="/orders/invoice/<%= order._id %>" class="btn btn-primary">
                         <i class="fas fa-download me-2"></i>Download Invoice
                     </a>
-                <p style="color: black;
-                        font-size:24px;">Shipment Status</p>
-                <span class="badge <%= getStatusBadgeClass(order.status) %>">
-                    
-                    <i class="fas fa-circle me-1"></i><%= order.status %>
-                </span>
-            </div>
+                </div>
             </div>
 
             <!-- Order Items -->
@@ -45,7 +41,9 @@
                             <th>Product</th>
                             <th>Price</th>
                             <th>Quantity</th>
+                            <!-- <th>Status</th> -->
                             <th class="text-end">Total</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -61,7 +59,20 @@
                                 </td>
                                 <td>₹<%= item.price.toLocaleString('en-IN') %></td>
                                 <td><%= item.quantity %></td>
+                                <!-- <td>
+                                    <span class="badge <%= getStatusBadgeClass(item.status || order.status) %>">
+                                        <i class="fas fa-circle me-1"></i><%= item.status || order.status %>
+                                    </span>
+                                </td> -->
                                 <td class="text-end">₹<%= (item.price * item.quantity).toLocaleString('en-IN') %></td>
+                                <td>
+                                    <% if ((item.status || order.status) !== 'Delivered' && (item.status || order.status) !== 'Cancelled') { %>
+                                        <button onclick="confirmCancelItem('<%= order._id %>', '<%= item.product._id %>', '<%= item.product.productName %>')" 
+                                                class="btn btn-danger btn-sm cancel-btn">
+                                            <i class="fas fa-times me-1"></i>Cancel
+                                        </button>
+                                    <% } %>
+                                </td>
                             </tr>
                         <% }); %>
                     </tbody>
@@ -131,100 +142,145 @@
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-async function retryPayment(orderId, amount) {
-    try {
-        // Create new Razorpay order
-        const response = await fetch('/order/create-razorpay-order', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                orderId: orderId,
-                amount: amount
-            })
-        });
 
-        const data = await response.json();
-        if (!data.success) {
-            throw new Error(data.message);
-        }
+    async function confirmCancelItem(orderId, productId, productName) {
+        try {
+            const result = await Swal.fire({
+                title: 'Cancel Item?',
+                html: `Are you sure you want to cancel <strong>${productName}</strong>?<br>The refund will be processed to your wallet.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Yes, cancel it!',
+                cancelButtonText: 'No, keep it'
+            });
 
-        const options = {
-            key: data.key,
-            amount: amount * 100,
-            currency: "INR",
-            name: "Euphoria",
-            description: "Retry Payment for Failed Order",
-            order_id: data.orderId,
-            handler: async function (response) {
-                try {
-                    const verifyResponse = await fetch('/order/verify-payment', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            razorpay_order_id: response.razorpay_order_id,
-                            razorpay_payment_id: response.razorpay_payment_id,
-                            razorpay_signature: response.razorpay_signature,
-                            orderId: orderId,
-                            finalAmount: amount
-                        })
-                    });
-
-                    const verifyData = await verifyResponse.json();
-                    if (verifyData.success) {
-                        await Swal.fire({
-                            icon: 'success',
-                            title: 'Payment Successful!',
-                            text: 'Your order has been confirmed.',
-                            confirmButtonColor: '#3399cc'
-                        });
-                        window.location.reload();
-                    } else {
-                        throw new Error(verifyData.message);
+            if (result.isConfirmed) {
+                const response = await fetch(`/order/cancel-item/${orderId}/${productId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
                     }
-                } catch (error) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Payment Failed',
-                        text: error.message || 'Payment verification failed. Please try again.',
-                        confirmButtonColor: '#3399cc'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    await Swal.fire({
+                        title: 'Cancelled!',
+                        html: `The item has been cancelled.<br>₹${data.refundAmount.toLocaleString('en-IN')} will be refunded to your wallet.`,
+                        icon: 'success'
                     });
-                }
-            },
-            prefill: {
-                name: "<%= order.address[0].name %>",
-                contact: "<%= order.address[0].phone %>"
-            },
-            theme: {
-                color: "#3399cc"
-            },
-            modal: {
-                ondismiss: function() {
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'Payment Cancelled',
-                        text: 'You cancelled the payment process.',
-                        confirmButtonColor: '#3399cc'
-                    });
+                    location.reload();
+                } else {
+                    throw new Error(data.message || 'Failed to cancel item');
                 }
             }
-        };
-
-        const rzp = new Razorpay(options);
-        rzp.open();
-
-    } catch (error) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: error.message || 'Failed to initiate payment. Please try again.',
-            confirmButtonColor: '#3399cc'
-        });
+        } catch (error) {
+            console.error('Error:', error);
+            Swal.fire({
+                title: 'Error!',
+                text: error.message || 'Failed to cancel item',
+                icon: 'error'
+            });
+        }
     }
-}
+
+    async function retryPayment(orderId, amount) {
+        try {
+            // Create new Razorpay order
+            const response = await fetch('/order/create-razorpay-order', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    orderId: orderId,
+                    amount: amount
+                })
+            });
+
+            const data = await response.json();
+            if (!data.success) {
+                throw new Error(data.message);
+            }
+
+            const options = {
+                key: data.key,
+                amount: amount * 100,
+                currency: "INR",
+                name: "Euphoria",
+                description: "Retry Payment for Failed Order",
+                order_id: data.orderId,
+                handler: async function (response) {
+                    try {
+                        const verifyResponse = await fetch('/order/verify-payment', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                razorpay_order_id: response.razorpay_order_id,
+                                razorpay_payment_id: response.razorpay_payment_id,
+                                razorpay_signature: response.razorpay_signature,
+                                orderId: orderId,
+                                finalAmount: amount
+                            })
+                        });
+
+                        const verifyData = await verifyResponse.json();
+                        if (verifyData.success) {
+                            await Swal.fire({
+                                icon: 'success',
+                                title: 'Payment Successful!',
+                                text: 'Your order has been confirmed.',
+                                confirmButtonColor: '#3399cc'
+                            });
+                            window.location.reload();
+                        } else {
+                            throw new Error(verifyData.message);
+                        }
+                    } catch (error) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Payment Failed',
+                            text: error.message || 'Payment verification failed. Please try again.',
+                            confirmButtonColor: '#3399cc'
+                        });
+                    }
+                },
+                prefill: {
+                    name: "<%= order.address[0].name %>",
+                    contact: "<%= order.address[0].phone %>"
+                },
+                theme: {
+                    color: "#3399cc"
+                },
+                modal: {
+                    ondismiss: function() {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Payment Cancelled',
+                            text: 'You cancelled the payment process.',
+                            confirmButtonColor: '#3399cc'
+                        });
+                    }
+                }
+            };
+
+            const rzp = new Razorpay(options);
+            rzp.open();
+
+        } catch (error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: error.message || 'Failed to initiate payment. Please try again.',
+                confirmButtonColor: '#3399cc'
+            });
+        }
+    }
 </script>
 </body>
 </html>

@@ -28,6 +28,7 @@ router.get("/unblockCustomer",auth.adminAuth,customerController.customerUnBlock)
 router.get("/orders", auth.adminAuth, orderController.getOrders)
 router.post('/orders/updateStatus', auth.adminAuth, orderController.updateOrderStatus);
 router.post('/orders/cancel', auth.adminAuth, orderController.cancelOrder);
+router.post("/orders/cancel-item", auth.adminAuth, orderController.cancelOrderItem)
 
 //Category Management
 router.get("/category",auth.adminAuth,categoryController.categoryInfo)

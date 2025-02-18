@@ -112,4 +112,15 @@ router.get('/orders/invoice/:orderId',auth.userAuth,orderController.generateInvo
 router.post('/order/create-razorpay-order', auth.userAuth, orderController.createRazorpayOrder)
 router.post('/order/verify-payment', auth.userAuth, orderController.verifyPayment)
 
+//Order Management
+router.post("/order/place-order",auth.userAuth,orderController.placeOrder)
+router.post("/order/verify-payment",auth.userAuth,orderController.verifyPayment)
+router.post("/order/payment-failed",auth.userAuth,orderController.handlePaymentFailure)
+router.get("/orders",auth.userAuth,orderController.getUserOrders)
+router.post("/order/cancel/:orderId",auth.userAuth,orderController.cancelOrder)
+router.post("/order/return/:orderId",auth.userAuth,orderController.returnOrder)
+router.post("/order/cancel-item/:orderId/:productId", auth.userAuth, orderController.singleCancel)
+router.get("/orders/orderDetails/:orderId",auth.userAuth,orderController.orderDetails)
+router.get('/orders/invoice/:orderId',auth.userAuth,orderController.generateInvoice)
+
 module.exports = router

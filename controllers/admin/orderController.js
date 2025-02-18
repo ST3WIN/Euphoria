@@ -14,7 +14,7 @@ const getOrders = async (req, res) => {
                 path: 'userId',
                 select: 'firstName lastName email phone'  // Include both firstName and lastName
             })
-            .select('orderItems userId status returnReason finalAmount paymentStatus')
+            .select('orderItems.product orderItems.quantity orderItems.price orderItems.status userId status returnReason finalAmount paymentStatus')
             .sort({ createdOn: -1 });
         
         res.render('order', { 
@@ -102,6 +102,78 @@ const cancelOrder = async (req, res) => {
     }
 }
 
+const cancelOrderItem = async (req, res) => {
+    try {
+        const { orderId, productId } = req.body;
+        const order = await Order.findById(orderId);
+
+        if (!order) {
+            return res.status(404).json({
+                success: false,
+                message: 'Order not found'
+            });
+        }
+
+        // Find the specific order item
+        const orderItem = order.orderItems.find(item => item.product.toString() === productId);
+        if (!orderItem) {
+            return res.status(404).json({
+                success: false,
+                message: 'Product not found in order'
+            });
+        }
+
+        // Calculate refund amount by distributing discount evenly
+        const totalItems = order.orderItems.length;
+        const discountPerItem = order.discount / totalItems;
+        const itemTotal = orderItem.price * orderItem.quantity;
+        const refundAmount = itemTotal - discountPerItem;
+
+        // Update product quantity
+        await Product.updateOne(
+            { _id: productId },
+            { $inc: { quantity: orderItem.quantity } }
+        );
+
+        // If payment was made, process refund to wallet
+        if (order.paymentMethod === 'Razorpay' || order.paymentMethod === 'WALLET' || order.paymentStatus === 'Paid') {
+            await User.findByIdAndUpdate(order.userId, {
+                $inc: { wallet: refundAmount }
+            });
+
+            // Create wallet transaction record
+            const walletTransaction = new Wallet({
+                userId: order.userId,
+                type: 'refunded',
+                amount: refundAmount,
+                description: `Refund for cancelled item in order (by admin)`,
+                orderId: order._id
+            });
+            await walletTransaction.save();
+        }
+
+        // Update only the specific item's status to Cancelled
+        const itemIndex = order.orderItems.findIndex(item => item.product.toString() === productId);
+        if (itemIndex !== -1) {
+            order.orderItems[itemIndex].status = 'Cancelled';
+        }
+
+        await order.save();
+
+        res.json({
+            success: true,
+            message: 'Item cancelled successfully'
+        });
+
+    } catch (error) {
+        console.error('Cancel item error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to cancel item'
+        });
+    }
+}
+
 const getStatusBadgeClass = (status) => {
     switch (status) {
         case 'Pending':
@@ -175,5 +247,6 @@ module.exports = {
     getOrders,
     updateOrderStatus,
     cancelOrder,
-    orderDetails
+    orderDetails,
+    cancelOrderItem
 }

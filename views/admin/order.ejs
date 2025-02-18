@@ -62,27 +62,28 @@
                                                 <%= item.quantity %>
                                             </td>
                                             <td class="align-middle text-end fw-medium">
-                                                ₹<%= order.finalAmount ? order.finalAmount.toLocaleString() : '0' %>
+                                                ₹<%= (item.price * item.quantity).toLocaleString() %>
                                             </td>
                                             <td class="align-middle">
                                                 <select class="form-select form-select-sm status-select" 
                                                         onchange="updateStatus('<%= order._id %>', this.value)"
-                                                        <%= order.status === 'Cancelled' || order.status === 'Returned' ? 'disabled' : '' %>>
-                                                    <option value="Pending" <%= order.status === 'Pending' ? 'selected' : '' %>>Pending</option>
-                                                    <option value="Processing" <%= order.status === 'Processing' ? 'selected' : '' %>>Processing</option>
-                                                    <option value="Shipped" <%= order.status === 'Shipped' ? 'selected' : '' %>>Shipped</option>
-                                                    <option value="Delivered" <%= order.status === 'Delivered' ? 'selected' : '' %>>Delivered</option>
-                                                    <option value="Return Requested" <%= order.status === 'Return Requested' ? 'selected' : '' %>>Return Requested</option>
-                                                    <option value="Returned" <%= order.status === 'Returned' ? 'selected' : '' %>>Returned</option>
-                                                    <option value="Cancelled" <%= order.status === 'Cancelled' ? 'selected' : '' %>>Cancelled</option>
+                                                        data-item-id="<%= item.product._id %>"
+                                                        <%= (item.status === 'Cancelled' || order.status === 'Cancelled') ? 'disabled' : '' %>>
+                                                    <option value="Pending" <%= (item.status || order.status) === 'Pending' ? 'selected' : '' %>>Pending</option>
+                                                    <option value="Processing" <%= (item.status || order.status) === 'Processing' ? 'selected' : '' %>>Processing</option>
+                                                    <option value="Shipped" <%= (item.status || order.status) === 'Shipped' ? 'selected' : '' %>>Shipped</option>
+                                                    <option value="Delivered" <%= (item.status || order.status) === 'Delivered' ? 'selected' : '' %>>Delivered</option>
+                                                    <option value="Return Requested" <%= (item.status || order.status) === 'Return Requested' ? 'selected' : '' %>>Return Requested</option>
+                                                    <option value="Returned" <%= (item.status || order.status) === 'Returned' ? 'selected' : '' %>>Returned</option>
+                                                    <option value="Cancelled" <%= (item.status || order.status) === 'Cancelled' ? 'selected' : '' %>>Cancelled</option>
                                                 </select>
                                             </td>
                                             <td class="align-middle text-center">
-                                                <% if (order.status === 'Cancelled' || order.status === 'Returned') { %>
+                                                <% if ((item.status || order.status) === 'Cancelled') { %>
                                                     <button class="btn btn-sm btn-secondary w-75" disabled>
-                                                        <%= order.status === 'Cancelled' ? 'Cancelled' : 'Returned' %>
+                                                        Cancelled
                                                     </button>
-                                                <% } else if (order.status === 'Return Requested') { %>
+                                                <% } else if ((item.status || order.status) === 'Return Requested') { %>
                                                     <button class="btn btn-sm btn-success w-75" 
                                                             onclick="approveReturn('<%= order._id %>', '<%= order.returnReason %>')"
                                                             data-return-reason="<%= order.returnReason %>">
@@ -90,9 +91,9 @@
                                                     </button>
                                                 <% } else { %>
                                                     <button class="btn btn-sm btn-danger w-75" 
-                                                            onclick="cancelOrder('<%= order._id %>')"
-                                                            <%= order.status === 'Delivered' ? 'disabled' : '' %>>
-                                                        Cancel Order
+                                                            onclick="cancelOrderItem('<%= order._id %>', '<%= item.product._id %>', this)"
+                                                            <%= (item.status || order.status) === 'Delivered' ? 'disabled' : '' %>>
+                                                        Cancel Item
                                                     </button>
                                                 <% } %>
                                             </td>
@@ -283,6 +284,68 @@
             Swal.fire({
                 title: 'Error!',
                 text: error.message || 'Failed to approve return',
+                icon: 'error',
+                confirmButtonColor: '#d33'
+            });
+        }
+    }
+
+    async function cancelOrderItem(orderId, productId, buttonElement) {
+        try {
+            const result = await Swal.fire({
+                title: 'Cancel Item?',
+                text: "This will process the refund and update inventory. Are you sure?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Yes, cancel it!'
+            });
+
+            if (result.isConfirmed) {
+                const response = await fetch('/admin/orders/cancel-item', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        orderId,
+                        productId
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    // Replace the cancel button with a disabled "Cancelled" button
+                    const newButton = document.createElement('button');
+                    newButton.className = 'btn btn-sm btn-secondary w-75';
+                    newButton.disabled = true;
+                    newButton.textContent = 'Cancelled';
+                    buttonElement.parentNode.replaceChild(newButton, buttonElement);
+
+                    // Find and update the status dropdown
+                    const row = buttonElement.closest('tr');
+                    const statusSelect = row.querySelector('.status-select');
+                    if (statusSelect) {
+                        statusSelect.value = 'Cancelled';
+                        statusSelect.disabled = true;
+                    }
+
+                    await Swal.fire({
+                        title: 'Cancelled!',
+                        text: 'The item has been cancelled and refund processed.',
+                        icon: 'success',
+                        confirmButtonColor: '#3085d6'
+                    });
+                } else {
+                    throw new Error(data.message || 'Failed to cancel item');
+                }
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            Swal.fire({
+                title: 'Error!',
+                text: error.message || 'Failed to cancel item',
                 icon: 'error',
                 confirmButtonColor: '#d33'
             });
