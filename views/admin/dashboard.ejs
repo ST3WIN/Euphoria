@@ -263,10 +263,10 @@
                                                 <td><%= order.paymentMethod || 'N/A' %></td>
                                                 <td>
                                                     <% 
-                                                    let displayStatus = order.paymentStatus;
+                                                    let displayStatus = item.paymentStatus;
                                                     let badgeClass = 'badge-soft-secondary';
                                                     
-                                                    if (order.status === 'Cancelled') {
+                                                    if (item.status === 'Cancelled') {
                                                         if (order.paymentMethod === 'COD') {
                                                             displayStatus = 'Cancelled';
                                                             badgeClass = 'badge-soft-danger';
@@ -274,18 +274,16 @@
                                                             displayStatus = 'Refunded';
                                                             badgeClass = 'badge-soft-info';
                                                         }
-                                                    } else if (order.status === 'Returned' || order.status === 'Return Requested') {
+                                                    } else if (item.status === 'Returned' || item.status === 'Return Requested') {
                                                         displayStatus = 'Refunded';
                                                         badgeClass = 'badge-soft-info';
-                                                    } else if (order.paymentStatus === 'Paid') {
+                                                    } else if (item.paymentStatus === 'Paid') {
                                                         badgeClass = 'badge-soft-success';
-                                                    } else if (order.paymentStatus === 'Pending') {
+                                                    } else if (item.paymentStatus === 'Pending') {
                                                         badgeClass = 'badge-soft-warning';
-                                                    } else if (order.paymentStatus === 'Failed') {
-                                                        badgeClass = 'badge-soft-danger';
                                                     }
                                                     %>
-                                                    <span class="badge badge-pill <%= badgeClass %>"><%= displayStatus %></span>
+                                                    <span class="badge <%= badgeClass %>"><%= displayStatus %></span>
                                                 </td>
                                                 <td><%= item.product ? item.product.productName : 'N/A' %></td>
                                                 <td><%= item.quantity %></td>

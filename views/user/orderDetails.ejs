@@ -10,10 +10,46 @@
         .table { margin-bottom: 0; }
         .table th { border-top: none; }
         .product-img { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; }
-        .badge { font-size: 0.9em; padding: 0.5em 0.75em; }
-        .info-box { background-color: #f8f9fa; border-radius: 8px; padding: 1.5rem; margin-bottom: 1rem; }
-        .status-badge { font-size: 0.8em; padding: 0.4em 0.6em; margin-top: 0.5rem; }
+        .badge {
+            font-size: 0.9em;
+            padding: 0.5em 0.75em;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5em;
+        }
+        .badge i {
+            font-size: 0.9em;
+        }
+        .badge.bg-primary {
+            background-color: #0d6efd !important;
+        }
+        .badge.bg-success {
+            background-color: #198754 !important;
+        }
+        .badge.bg-warning {
+            background-color: #ffc107 !important;
+            color: #000;
+        }
+        .badge.bg-danger {
+            background-color: #dc3545 !important;
+        }
+        .status-badge {
+            font-size: 0.8em;
+            padding: 0.4em 0.6em;
+            margin-top: 0.5rem;
+        }
         .cancel-btn { font-size: 0.9em; padding: 0.3em 0.6em; }
+        .info-box { background-color: #f8f9fa; border-radius: 8px; padding: 1.5rem; margin-bottom: 1rem; }
+        .btn-warning {
+            color: #000;
+            background-color: #ffc107;
+            border-color: #ffc107;
+        }
+        .btn-warning:hover {
+            color: #000;
+            background-color: #ffca2c;
+            border-color: #ffc720;
+        }
     </style>
 </head>
 
@@ -25,6 +61,30 @@
                 <div>
                     <h4 class="mb-1">Order #<%= order.orderId %></h4>
                     <p class="text-muted mb-0"><i class="fas fa-calendar-alt me-2"></i><%= formatDate(order.createdOn) %></p>
+                    <div class="mt-2">
+                        <% 
+                        let hasFailedPayment = order.orderItems.some(item => item.paymentStatus === 'Failed');
+                        let allPaid = order.orderItems.every(item => item.paymentStatus === 'Paid');
+                        let paymentStatus = allPaid ? 'Paid' : (hasFailedPayment ? 'Failed' : 'Pending');
+                        %>
+                        <span class="badge <%= paymentStatus === 'Paid' ? 'bg-success' : 
+                                            paymentStatus === 'Failed' ? 'bg-danger' : 
+                                            'bg-warning' %> me-2">
+                            <i class="fas fa-credit-card me-1"></i>
+                            <%= paymentStatus === 'Paid' ? 'Payment Completed' : 
+                                paymentStatus === 'Failed' ? 'Payment Failed' : 
+                                'Payment Pending' %>
+                            <% if (order.paymentMethod) { %>
+                                via <%= order.paymentMethod %>
+                            <% } %>
+                        </span>
+                        <% if (hasFailedPayment) { %>
+                            <button onclick="retryPayment('<%= order._id %>', <%= order.finalAmount %>)" 
+                                    class="btn btn-warning btn-sm ms-2">
+                                <i class="fas fa-sync-alt me-1"></i>Retry Payment
+                            </button>
+                        <% } %>
+                    </div>
                 </div>
                 <div>
                     <a href="/orders/invoice/<%= order._id %>" class="btn btn-primary">
@@ -41,7 +101,8 @@
                             <th>Product</th>
                             <th>Price</th>
                             <th>Quantity</th>
-                            <!-- <th>Status</th> -->
+                            <th>Status</th>
+                            <th>Payment Status</th>
                             <th class="text-end">Total</th>
                             <th>Action</th>
                         </tr>
@@ -59,17 +120,27 @@
                                 </td>
                                 <td>₹<%= item.price.toLocaleString('en-IN') %></td>
                                 <td><%= item.quantity %></td>
-                                <!-- <td>
+                                <td>
                                     <span class="badge <%= getStatusBadgeClass(item.status || order.status) %>">
                                         <i class="fas fa-circle me-1"></i><%= item.status || order.status %>
                                     </span>
-                                </td> -->
+                                </td>
+                                <td><span class="badge <%= getStatusBadgeClass(item.paymentStatus) %>">
+                                    <%= item.paymentStatus %>
+                                </span></td>
                                 <td class="text-end">₹<%= (item.price * item.quantity).toLocaleString('en-IN') %></td>
                                 <td>
-                                    <% if ((item.status || order.status) !== 'Delivered' && (item.status || order.status) !== 'Cancelled') { %>
+                                    <% if (!['Delivered', 'Cancelled', 'Returned', 'Return Requested'].includes(item.status || order.status) && item.paymentStatus !== 'Failed') { %>
                                         <button onclick="confirmCancelItem('<%= order._id %>', '<%= item.product._id %>', '<%= item.product.productName %>')" 
                                                 class="btn btn-danger btn-sm cancel-btn">
                                             <i class="fas fa-times me-1"></i>Cancel
+                                        </button>
+                                    <% } %>
+                                    <% if ((item.status || order.status) === 'Delivered') { %>
+                                        <button onclick="initiateReturn('<%= order._id %>', '<%= item.product._id %>', '<%= item.product.productName %>')"
+                                                class="btn btn-warning btn-sm"
+                                                <%= new Date() - new Date(order.createdOn) > 7 * 24 * 60 * 60 * 1000 ? 'disabled' : '' %>>
+                                            <i class="fas fa-undo me-1"></i>Return
                                         </button>
                                     <% } %>
                                 </td>
@@ -109,7 +180,7 @@
                     <div class="info-box">
                         <h6 class="mb-3"><i class="fas fa-credit-card me-2"></i>Payment Information</h6>
                         <p class="mb-1"><strong>Method:</strong> <%= order.paymentMethod %></p>
-                        <p class="mb-1"><strong>Payment Status:</strong> <%= order.paymentStatus %></p>
+                        <!-- <p class="mb-1"><strong>Payment Status:</strong> <%= order.paymentStatus %></p> -->
                         <% if (order.razorpayPaymentId) { %>
                             <p class="mb-0"><strong>Payment ID:</strong> <%= order.razorpayPaymentId %></p>
                         <% } %>
@@ -183,6 +254,65 @@
                 title: 'Error!',
                 text: error.message || 'Failed to cancel item',
                 icon: 'error'
+            });
+        }
+    }
+
+    async function initiateReturn(orderId, productId, productName) {
+        try {
+            const { value: returnReason } = await Swal.fire({
+                title: `Return ${productName}`,
+                input: 'textarea',
+                inputLabel: 'Please provide a reason for return',
+                inputPlaceholder: 'Enter your return reason here...',
+                inputAttributes: {
+                    'aria-label': 'Return reason',
+                    'maxlength': '500'
+                },
+                showCancelButton: true,
+                inputValidator: (value) => {
+                    if (!value) {
+                        return 'You need to provide a reason for return!';
+                    }
+                    if (value.length < 10) {
+                        return 'Please provide a more detailed reason (minimum 10 characters)';
+                    }
+                }
+            });
+
+            if (returnReason) {
+                const response = await fetch('/orders/return', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        orderId,
+                        productId,
+                        returnReason
+                    })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    await Swal.fire({
+                        icon: 'success',
+                        title: 'Return Requested',
+                        text: 'Your return request has been submitted successfully. Please wait for admin approval.',
+                        confirmButtonColor: '#3085d6'
+                    });
+                    location.reload();
+                } else {
+                    throw new Error(result.message || 'Failed to submit return request');
+                }
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            await Swal.fire({
+                icon: 'error',
+                title: 'Oops...',
+                text: error.message || 'Something went wrong!',
+                confirmButtonColor: '#d33'
             });
         }
     }

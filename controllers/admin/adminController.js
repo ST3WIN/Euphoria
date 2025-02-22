@@ -20,7 +20,6 @@ const loadLogin = (req,res)=>{
         console.log("Error",error)
         
     }
-    
 }
 
 const login = async(req,res)=>{
@@ -113,8 +112,17 @@ const loadDashBoard = async (req, res) => {
                 }
             }
 
-            // Fetch orders with date filter
-            const orders = await Order.find(dateQuery)
+            // Add payment status filter to only show paid orders
+            const query = {
+                ...dateQuery,
+                'orderItems': {
+                    $elemMatch: {
+                        paymentStatus: 'Paid'
+                    }
+                }
+            };
+
+            const orders = await Order.find(query)
                 .populate({
                     path: 'orderItems.product',
                     select: 'productName productImage brand category',
@@ -124,13 +132,37 @@ const loadDashBoard = async (req, res) => {
                     }
                 })
                 .populate('userId', 'firstName lastName phone')
-                .select('orderItems status paymentMethod paymentStatus createdOn address userId discount')
+                .select('orderItems status paymentMethod createdOn address userId discount')
                 .sort({ createdOn: -1 });
 
-            // Aggregate top selling products
-            const topProducts = orders.reduce((acc, order) => {
+            // Filter out refunded items and recalculate totals
+            const ordersWithPaidItemsOnly = orders.map(order => {
+                const orderObj = order.toObject();
+                // Only keep paid items, explicitly exclude refunded
+                orderObj.orderItems = orderObj.orderItems.filter(item => 
+                    item.paymentStatus === 'Paid'
+                );
+
+                // Recalculate totals for only paid items
+                const totalPrice = orderObj.orderItems.reduce((sum, item) => 
+                    sum + (item.price * item.quantity), 0
+                );
+                
+                // Apply discount proportionally to paid items only
+                const discountPerItem = orderObj.discount / order.orderItems.length;
+                const adjustedDiscount = discountPerItem * orderObj.orderItems.length;
+                
+                orderObj.totalPrice = totalPrice;
+                orderObj.discount = adjustedDiscount;
+                orderObj.finalAmount = totalPrice - adjustedDiscount;
+
+                return orderObj;
+            });
+
+            // Modify aggregations to only count paid items
+            const topProducts = ordersWithPaidItemsOnly.reduce((acc, order) => {
                 order.orderItems.forEach(item => {
-                    if (item.product) {
+                    if (item.product && item.paymentStatus === 'Paid') {
                         const productId = item.product._id.toString();
                         if (!acc[productId]) {
                             acc[productId] = {
@@ -144,10 +176,11 @@ const loadDashBoard = async (req, res) => {
                 return acc;
             }, {});
 
-            // Aggregate top selling categories
-            const topCategories = orders.reduce((acc, order) => {
+            const topCategories = ordersWithPaidItemsOnly.reduce((acc, order) => {
                 order.orderItems.forEach(item => {
-                    if (item.product && item.product.category && item.product.category.name) {
+                    if (item.product && item.product.category && 
+                        item.product.category.name && 
+                        item.paymentStatus === 'Paid') {
                         const categoryName = item.product.category.name;
                         if (!acc[categoryName]) {
                             acc[categoryName] = 0;
@@ -158,10 +191,10 @@ const loadDashBoard = async (req, res) => {
                 return acc;
             }, {});
 
-            // Aggregate top selling brands
-            const topBrands = orders.reduce((acc, order) => {
+            const topBrands = ordersWithPaidItemsOnly.reduce((acc, order) => {
                 order.orderItems.forEach(item => {
-                    if (item.product && item.product.brand) {
+                    if (item.product && item.product.brand && 
+                        item.paymentStatus === 'Paid') {
                         const brand = item.product.brand;
                         if (!acc[brand]) {
                             acc[brand] = 0;
@@ -185,8 +218,8 @@ const loadDashBoard = async (req, res) => {
                 .sort((a, b) => b[1] - a[1])
                 .slice(0, 2);
 
-            res.render("dashboard", { 
-                orders,
+            res.render("dashboard", {
+                orders: ordersWithPaidItemsOnly,
                 filterInfo: {
                     type: filterType || 'all',
                     startDate: startDate || '',
@@ -196,8 +229,8 @@ const loadDashBoard = async (req, res) => {
                 topCategories: top2Categories,
                 topBrands: top2Brands,
                 currentFilter: filterType || 'all'
-            })
-            
+            });
+
         } catch (error) {
             console.error("Error loading dashboard:", error);
             res.redirect("/pageError");
@@ -257,7 +290,13 @@ const downloadSalesReport = async (req, res) => {
         }
 
         // Fetch orders based on the filter
-        const orders = await Order.find(dateQuery)
+        const orders = await Order.find({
+            ...dateQuery,
+            $or: [
+                { 'orderItems.paymentStatus': 'Paid' },
+                { 'orderItems.status': 'Delivered' }
+            ]
+        })
             .populate({ path: 'orderItems.product', select: 'productName productImage brand' })
             .populate('userId', 'firstName lastName phone')
             .select('orderItems status paymentMethod paymentStatus createdOn address userId discount')

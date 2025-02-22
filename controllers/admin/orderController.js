@@ -5,17 +5,25 @@ const Product = require('../../models/productSchema')
 
 const getOrders = async (req, res) => {
     try {
-        const orders = await Order.find({ paymentStatus: { $ne: 'Failed' } })
-            .populate({
-                path: 'orderItems.product',
-                select: 'productName productImage brand'
-            })
-            .populate({
-                path: 'userId',
-                select: 'firstName lastName email phone'  // Include both firstName and lastName
-            })
-            .select('orderItems.product orderItems.quantity orderItems.price orderItems.status userId status returnReason finalAmount paymentStatus')
-            .sort({ createdOn: -1 });
+        const orders = await Order.find({
+            'orderItems': {
+                $not: {
+                    $elemMatch: {
+                        'paymentStatus': 'Failed'
+                    }
+                }
+            }
+        })
+        .populate({
+            path: 'orderItems.product',
+            select: 'productName productImage brand'
+        })
+        .populate({
+            path: 'userId',
+            select: 'firstName lastName email phone'
+        })
+        .select('orderItems.product orderItems.quantity orderItems.price orderItems.status orderItems.paymentStatus userId status returnReason finalAmount')
+        .sort({ createdOn: -1 });
         
         res.render('order', { 
             orders,
@@ -29,50 +37,75 @@ const getOrders = async (req, res) => {
 
 const updateOrderStatus = async (req, res) => {
     try {
-        const { orderId, status } = req.body;
+        const { orderId, productId, status } = req.body;
         const order = await Order.findById(orderId);
 
         if (!order) {
             return res.status(404).json({ success: false, message: 'Order not found' });
         }
 
-        // Handle return approval
-        if (status === 'Returned' && order.status === 'Return Requested') {
-            // Use order.userId instead of order.address
+        // Find the specific order item if productId is provided
+        let orderItem;
+        if (productId) {
+            orderItem = order.orderItems.find(item => item.product.toString() === productId);
+            if (!orderItem) {
+                return res.status(404).json({ success: false, message: 'Product not found in order' });
+            }
+        }
+
+        // Handle return approval for specific item
+        if (status === 'Returned' && orderItem && orderItem.status === 'Return Requested') {
             const userId = order.userId;
             
+            // Calculate refund amount for the specific item
+            const totalItems = order.orderItems.length;
+            const discountPerItem = order.discount / totalItems;
+            const itemTotal = orderItem.price * orderItem.quantity;
+            const refundAmount = itemTotal - discountPerItem;
+
             // Add refund to user's wallet
             await User.findByIdAndUpdate(userId, {
-                $inc: { wallet: order.finalAmount }
+                $inc: { wallet: refundAmount }
             });
 
             // Create wallet transaction record
             const walletTransaction = new Wallet({
                 userId,
                 type: 'refunded',
-                amount: order.finalAmount,
-                description: `Refund for returned order`,
+                amount: refundAmount,
+                description: `Refund for returned item in order`,
                 orderId: order._id
             });
             await walletTransaction.save();
 
-            // Restore product quantities
-            for (const item of order.orderItems) {
-                await Product.updateOne(
-                    { _id: item.product },
-                    { $inc: { quantity: item.quantity } }
-                );
+            // Restore product quantity for the specific item
+            await Product.updateOne(
+                { _id: orderItem.product },
+                { $inc: { quantity: orderItem.quantity } }
+            );
+
+            // Update the specific item's status
+            orderItem.status = status;
+            orderItem.paymentStatus = "Refunded"
+        } else if (productId) {
+            // Update status for specific product
+            orderItem.status = status;
+            if(orderItem.status === 'Delivered' && order.paymentMethod === 'COD'){
+                orderItem.paymentStatus = "Paid"
             }
+        } else {
+            // Update status for all items in the order
+            order.orderItems.forEach(item => {
+                item.status = status;
+            });
         }
 
-        // Update order status
-        order.status = status;
-        if (status === 'Returned' && order.paymentStatus === 'Paid') {
-            order.paymentStatus = 'Refunded';
-        }
         await order.save();
 
-        res.json({ success: true, message: 'Order status updated successfully' });
+        res.json({ 
+            success: true, 
+            message: productId ? 'Product status updated successfully' : 'Order status updated successfully'
+        });
     } catch (error) {
         console.error('Update order status error:', error);
         res.status(500).json({ success: false, message: 'Failed to update order status' });
@@ -81,26 +114,112 @@ const updateOrderStatus = async (req, res) => {
 
 const cancelOrder = async (req, res) => {
     try {
-        const { orderId } = req.body;
+        const { orderId, productId } = req.body;
         const order = await Order.findById(orderId);
+        
         if (!order) {
             return res.json({ success: false, error: 'Order not found' });
         }
-        if (order.status === 'Delivered') {
-            return res.json({ success: false, error: 'Cannot cancel delivered order' });
-        }
-        if (order.status === 'Cancelled') {
-            return res.json({ success: false, error: 'Order is already cancelled' });
-        }
-        order.status = 'Cancelled';
-        await order.save();
 
+        if (productId) {
+            // Cancel specific product
+            const orderItem = order.orderItems.find(item => item.product.toString() === productId);
+            if (!orderItem) {
+                return res.json({ success: false, error: 'Product not found in order' });
+            }
+
+            if (orderItem.status === 'Delivered') {
+                return res.json({ success: false, error: 'Cannot cancel delivered item' });
+            }
+            if (orderItem.status === 'Cancelled') {
+                return res.json({ success: false, error: 'Item is already cancelled' });
+            }
+
+            // Calculate refund amount for the specific item
+            const totalItems = order.orderItems.length;
+            const discountPerItem = order.discount / totalItems;
+            const itemTotal = orderItem.price * orderItem.quantity;
+            const refundAmount = itemTotal - discountPerItem;
+
+            // Process refund if payment was made
+            if (order.paymentMethod === 'Razorpay' || order.paymentMethod === 'WALLET' || order.paymentStatus === 'Paid') {
+                await User.findByIdAndUpdate(order.userId, {
+                    $inc: { wallet: refundAmount }
+                });
+
+                const walletTransaction = new Wallet({
+                    userId: order.userId,
+                    type: 'refunded',
+                    amount: refundAmount,
+                    description: `Refund for cancelled item in order`,
+                    orderId: order._id
+                });
+                await walletTransaction.save();
+            }
+
+            // Update product quantity
+            await Product.updateOne(
+                { _id: orderItem.product },
+                { $inc: { quantity: orderItem.quantity } }
+            );
+
+            orderItem.status = 'Cancelled';
+        } else {
+            // Cancel entire order
+            if (order.orderItems.every(item => item.status === 'Delivered')) {
+                return res.json({ success: false, error: 'Cannot cancel delivered order' });
+            }
+            if (order.orderItems.every(item => item.status === 'Cancelled')) {
+                return res.json({ success: false, error: 'Order is already cancelled' });
+            }
+
+            // Only cancel items that are not delivered
+            for (const item of order.orderItems) {
+                if (item.status !== 'Delivered') {
+                    item.status = 'Cancelled';
+                    
+                    // Update product quantity
+                    await Product.updateOne(
+                        { _id: item.product },
+                        { $inc: { quantity: item.quantity } }
+                    );
+                }
+            }
+
+            // Calculate total refund amount for cancellable items
+            const refundAmount = order.orderItems.reduce((total, item) => {
+                if (item.status === 'Cancelled') {
+                    const itemTotal = item.price * item.quantity;
+                    const discountPerItem = order.discount / order.orderItems.length;
+                    return total + (itemTotal - discountPerItem);
+                }
+                return total;
+            }, 0);
+
+            // Process refund if payment was made
+            if (refundAmount > 0 && (order.paymentMethod === 'Razorpay' || order.paymentMethod === 'WALLET' || order.paymentStatus === 'Paid')) {
+                await User.findByIdAndUpdate(order.userId, {
+                    $inc: { wallet: refundAmount }
+                });
+
+                const walletTransaction = new Wallet({
+                    userId: order.userId,
+                    type: 'refunded',
+                    amount: refundAmount,
+                    description: `Refund for cancelled items in order`,
+                    orderId: order._id
+                });
+                await walletTransaction.save();
+            }
+        }
+
+        await order.save();
         res.json({ success: true });
     } catch (error) {
         console.error('Error cancelling order:', error);
         res.json({ success: false, error: error.message });
     }
-}
+};
 
 const cancelOrderItem = async (req, res) => {
     try {

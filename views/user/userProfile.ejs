@@ -562,6 +562,11 @@
                                                     <small class="text-muted">
                                                         Qty: <%= item.quantity %> × ₹<%= item.price.toLocaleString('en-IN') %>
                                                     </small>
+                                                    <div class="mt-1">
+                                                        <span class="badge <%= getStatusBadgeClass(item.status) %>">
+                                                            <%= item.status %>
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         <% }) %>
@@ -576,13 +581,6 @@
                                                       onsubmit="return confirmCancel(event)" class="d-inline me-2">
                                                     <button type="submit" class="btn btn-danger btn-sm">
                                                         Cancel Order
-                                                    </button>
-                                                </form>
-                                            <% } else if (order.status === 'Delivered') { %>
-                                                <form action="/orders/return/<%= order._id %>" method="POST" 
-                                                      onsubmit="return confirmReturn(event)" class="d-inline me-2">
-                                                    <button type="submit" class="btn btn-warning btn-sm">
-                                                        Return Order
                                                     </button>
                                                 </form>
                                             <% } %>
@@ -1056,7 +1054,7 @@
     }
 </script>
 <script>
-    function loadOrders() {
+    async function loadOrders() {
         fetch('/orders/list')
             .then(response => response.json())
             .then(data => {
@@ -1074,15 +1072,22 @@
                             </div>
                             <div class="order-items mb-3">
                                 ${order.orderItems.map(item => `
-                                    <div class="d-flex align-items-center mb-2">
-                                        <img src="/uploads/re-image/${item.product.productImage[0]}" 
-                                             alt="${item.product.productName}" 
-                                             class="me-3" style="width: 60px; height: 60px; object-fit: cover;">
-                                        <div>
-                                            <h6 class="mb-0">${item.product.productName}</h6>
-                                            <small class="text-muted">
-                                                Qty: ${item.quantity} × ₹${item.price.toLocaleString('en-IN')}
-                                            </small>
+                                    <div class="d-flex align-items-center mb-2 justify-content-between">
+                                        <div class="d-flex align-items-center">
+                                            <img src="/uploads/re-image/${item.product.productImage[0]}" 
+                                                 alt="${item.product.productName}" 
+                                                 class="me-3" style="width: 60px; height: 60px; object-fit: cover;">
+                                            <div>
+                                                <h6 class="mb-0">${item.product.productName}</h6>
+                                                <small class="text-muted">
+                                                    Qty: ${item.quantity} × ₹${item.price.toLocaleString('en-IN')}
+                                                </small>
+                                                <div class="mt-1">
+                                                    <span class="badge ${getStatusBadgeClass(item.status)}">
+                                                        ${item.status}
+                                                    </span>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 `).join('')}
@@ -1210,6 +1215,66 @@
         }
         
         return false;
+    }
+</script>
+<script>
+    async function initiateReturn(orderId, productId) {
+        try {
+            const { value: returnReason } = await Swal.fire({
+                title: 'Return Item',
+                input: 'textarea',
+                inputLabel: 'Please provide a reason for return',
+                inputPlaceholder: 'Enter your return reason here...',
+                inputAttributes: {
+                    'aria-label': 'Return reason',
+                    'maxlength': '500'
+                },
+                showCancelButton: true,
+                inputValidator: (value) => {
+                    if (!value) {
+                        return 'You need to provide a reason for return!';
+                    }
+                    if (value.length < 10) {
+                        return 'Please provide a more detailed reason (minimum 10 characters)';
+                    }
+                }
+            });
+
+            if (returnReason) {
+                const response = await fetch('/orders/return', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        orderId,
+                        productId,
+                        returnReason
+                    })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    await Swal.fire({
+                        icon: 'success',
+                        title: 'Return Requested',
+                        text: 'Your return request has been submitted successfully. Please wait for admin approval.',
+                        confirmButtonColor: '#3085d6'
+                    });
+                    location.reload();
+                } else {
+                    throw new Error(result.message || 'Failed to submit return request');
+                }
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            await Swal.fire({
+                icon: 'error',
+                title: 'Oops...',
+                text: error.message || 'Something went wrong!',
+                confirmButtonColor: '#d33'
+            });
+        }
     }
 </script>
 <script>
