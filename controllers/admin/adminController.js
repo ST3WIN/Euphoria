@@ -292,15 +292,43 @@ const downloadSalesReport = async (req, res) => {
         // Fetch orders based on the filter
         const orders = await Order.find({
             ...dateQuery,
-            $or: [
-                { 'orderItems.paymentStatus': 'Paid' },
-                { 'orderItems.status': 'Delivered' }
-            ]
+            'orderItems': {
+                $elemMatch: {
+                    paymentStatus: 'Paid'
+                }
+            }
         })
-            .populate({ path: 'orderItems.product', select: 'productName productImage brand' })
+            .populate({ path: 'orderItems.product', select: 'productName productImage brand category', 
+                populate: { path: 'category', select: 'name' } 
+            })
             .populate('userId', 'firstName lastName phone')
-            .select('orderItems status paymentMethod paymentStatus createdOn address userId discount')
+            .select('orderItems status paymentMethod paymentStatus createdOn address userId discount finalAmount')
             .sort({ createdOn: -1 });
+
+        // Further filter to only include paid items and recalculate totals
+        const ordersWithPaidItemsOnly = orders.map(order => {
+            const orderObj = order.toObject();
+            
+            // Only keep paid items
+            orderObj.orderItems = orderObj.orderItems.filter(item => 
+                item.paymentStatus === 'Paid'
+            );
+
+            // Recalculate totals for only paid items
+            const totalPrice = orderObj.orderItems.reduce((sum, item) => 
+                sum + (item.price * item.quantity), 0
+            );
+            
+            // Apply discount proportionally to paid items only
+            const discountPerItem = orderObj.discount / order.orderItems.length;
+            const adjustedDiscount = discountPerItem * orderObj.orderItems.length;
+            
+            orderObj.totalPrice = totalPrice;
+            orderObj.discount = adjustedDiscount;
+            orderObj.finalAmount = totalPrice - adjustedDiscount;
+
+            return orderObj;
+        }).filter(order => order.orderItems.length > 0);
 
         if (format === 'pdf') {
             const doc = new PDFDocument({ margin: 30, size: 'A4', layout: 'landscape' });
@@ -320,10 +348,11 @@ const downloadSalesReport = async (req, res) => {
             doc.fontSize(12).text('Summary', { underline: true });
             
             // Calculate summary data
-            const totalOrders = orders.length;
-            const totalPrice = orders.reduce((sum, order) => 
-                sum + order.orderItems.reduce((itemSum, item) => itemSum + (item.price * item.quantity), 0), 0);
-            const totalDiscount = orders.reduce((sum, order) => sum + (order.discount || 0), 0);
+            const totalOrders = ordersWithPaidItemsOnly.length;
+            const totalPrice = ordersWithPaidItemsOnly.reduce((sum, order) => 
+                sum + order.totalPrice, 0);
+            const totalDiscount = ordersWithPaidItemsOnly.reduce((sum, order) => 
+                sum + order.discount, 0);
             const netProfit = totalPrice - totalDiscount;
             
             const summaryTable = {
@@ -375,18 +404,23 @@ const downloadSalesReport = async (req, res) => {
             };
             
             // Populate table data
-            orders.forEach((order, index) => {
+            ordersWithPaidItemsOnly.forEach((order, index) => {
                 order.orderItems.forEach(item => {
-                    table.rows.push([
-                        (index + 1).toString(),
-                        new Date(order.createdOn).toLocaleDateString(),
-                        order.userId ? `${order.userId.firstName} ${order.userId.lastName}` : 'N/A',
-                        item.product ? item.product.productName : 'N/A',
-                        item.quantity.toString(),
-                        `Rs ${(item.price * item.quantity).toFixed(2)}`,
-                        `Rs ${(order.discount || 0).toFixed(2)}`,
-                        `Rs ${((item.price * item.quantity) - (order.discount || 0)).toFixed(2)}`
-                    ]);
+                    if (item.product) {
+                        const itemDiscount = order.discount / order.orderItems.length; // Distribute discount evenly
+                        const itemFinalAmount = (item.price * item.quantity) - itemDiscount;
+                        
+                        table.rows.push([
+                            (index + 1).toString(),
+                            new Date(order.createdOn).toLocaleDateString(),
+                            order.userId ? `${order.userId.firstName} ${order.userId.lastName}` : 'N/A',
+                            item.product.productName || 'N/A',
+                            item.quantity.toString(),
+                            `Rs ${(item.price * item.quantity).toFixed(2)}`,
+                            `Rs ${itemDiscount.toFixed(2)}`,
+                            `Rs ${itemFinalAmount.toFixed(2)}`
+                        ]);
+                    }
                 });
             });
             
@@ -430,37 +464,87 @@ const downloadSalesReport = async (req, res) => {
             const workbook = new ExcelJS.Workbook();
             const worksheet = workbook.addWorksheet('Sales Report');
 
-            // Header
-            worksheet.addRow(['Euphoria Sales Report']).font = { size: 14, bold: true };
-            worksheet.addRow([`Filter: ${filterType || 'All Time'}`]);
-            if (filterType === 'custom') worksheet.addRow([`Date Range: ${startDate} to ${endDate}`]);
+            // Add title
+            worksheet.mergeCells('A1:H1');
+            worksheet.getCell('A1').value = 'EUPHORIA';
+            worksheet.getCell('A1').alignment = { horizontal: 'center' };
+            worksheet.getCell('A1').font = { size: 16, bold: true };
+
+            worksheet.mergeCells('A2:H2');
+            worksheet.getCell('A2').value = 'Sales Report';
+            worksheet.getCell('A2').alignment = { horizontal: 'center' };
+            worksheet.getCell('A2').font = { size: 14, bold: true };
+
+            // Add summary section
             worksheet.addRow([]);
+            worksheet.addRow(['Summary']);
+            worksheet.getRow(4).font = { bold: true, underline: true };
 
-            // Column Headers
-            worksheet.addRow(['Order ID', 'Date', 'Customer', 'Products', 'Amount (Rs)', 'Status']);
+            // Calculate summary data using the same logic as PDF
+            const totalOrders = ordersWithPaidItemsOnly.length;
+            const totalPrice = ordersWithPaidItemsOnly.reduce((sum, order) => 
+                sum + order.totalPrice, 0);
+            const totalDiscount = ordersWithPaidItemsOnly.reduce((sum, order) => 
+                sum + order.discount, 0);
+            const netProfit = totalPrice - totalDiscount;
 
-            let totalAmount = 0;
-            orders.forEach(order => {
-                const orderAmount = order.orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0) - (order.discount || 0);
-                totalAmount += orderAmount;
-                const products = order.orderItems.map(item => item.product.productName).join(', ');
-                worksheet.addRow([
-                    order._id.toString().slice(-6),
-                    new Date(order.createdOn).toLocaleDateString(),
-                    `${order.userId.firstName} ${order.userId.lastName}`,
-                    products,
-                    `Rs ${orderAmount.toFixed(2)}`,
-                    order.status
-                ]);
+            // Add summary table
+            worksheet.addRow(['Total Orders', 'Total Price', 'Total Discounts', 'Net Profit']);
+            worksheet.addRow([
+                totalOrders,
+                `Rs ${totalPrice.toFixed(2)}`,
+                `Rs ${totalDiscount.toFixed(2)}`,
+                `Rs ${netProfit.toFixed(2)}`
+            ]);
+
+            // Style summary table
+            worksheet.getRow(5).font = { bold: true };
+            ['A5:A6', 'B5:B6', 'C5:C6', 'D5:D6'].forEach(range => {
+                worksheet.getCell(range).alignment = { horizontal: 'center' };
             });
 
-            worksheet.addRow([]);
-            worksheet.addRow(['', '', '', 'Total Amount:', `Rs ${totalAmount.toFixed(2)}`]);
-            worksheet.columns.forEach(column => column.width = 20);
+            // Add space before order details
+            worksheet.addRows([[], [], ['Order Details']]);
+            worksheet.getRow(9).font = { bold: true, underline: true };
+
+            // Add order details header
+            const headers = ['#', 'Date', 'Customer', 'Product', 'Quantity', 'Price', 'Discount', 'Final Amount'];
+            worksheet.addRow(headers);
+            worksheet.getRow(10).font = { bold: true };
+
+            // Add order details data using the same logic as PDF
+            ordersWithPaidItemsOnly.forEach((order, index) => {
+                order.orderItems.forEach(item => {
+                    if (item.product) {
+                        const itemDiscount = order.discount / order.orderItems.length; // Distribute discount evenly
+                        const itemFinalAmount = (item.price * item.quantity) - itemDiscount;
+
+                        worksheet.addRow([
+                            index + 1,
+                            new Date(order.createdOn).toLocaleDateString(),
+                            order.userId ? `${order.userId.firstName} ${order.userId.lastName}` : 'N/A',
+                            item.product.productName || 'N/A',
+                            item.quantity,
+                            `Rs ${(item.price * item.quantity).toFixed(2)}`,
+                            `Rs ${itemDiscount.toFixed(2)}`,
+                            `Rs ${itemFinalAmount.toFixed(2)}`
+                        ]);
+                    }
+                });
+            });
+
+            // Style all cells
+            worksheet.columns.forEach(column => {
+                column.alignment = { horizontal: 'center' };
+                column.width = 15;
+            });
+
+            // Set response headers
             res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
             res.setHeader('Content-Disposition', `attachment; filename=euphoria-sales-report-${filterType || 'all'}.xlsx`);
+
+            // Send the workbook
             await workbook.xlsx.write(res);
-            res.end();
         }
     } catch (error) {
         console.error('Error generating sales report:', error);
