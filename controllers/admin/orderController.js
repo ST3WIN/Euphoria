@@ -35,6 +35,32 @@ const getOrders = async (req, res) => {
     }
 }
 
+const getOrderDetails = async(req,res)=>{
+    try {
+        const orderId = req.params.orderId
+        const orderData = await Order.findOne({
+            _id: orderId 
+        }).populate({
+            path: 'orderItems.product',
+            select: 'productName productImage salePrice'
+        }).populate({
+            path: 'userId',
+            select: 'firstName lastName email phone address'
+        });
+
+        if (!orderData) {
+            return res.redirect('/admin/pageError');
+        }
+        res.render("ordersDetails",{
+            order: orderData,
+            title: 'Order Details'
+        })
+    } catch (error) {
+        console.error('Error fetching order details:', error);
+        res.redirect('/admin/pageError');
+    }
+}
+
 const updateOrderStatus = async (req, res) => {
     try {
         const { orderId, productId, status } = req.body;
@@ -366,6 +392,8 @@ module.exports = {
     getOrders,
     updateOrderStatus,
     cancelOrder,
+    cancelOrderItem,
+    getStatusBadgeClass,
     orderDetails,
-    cancelOrderItem
+    getOrderDetails
 }

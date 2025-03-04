@@ -16,6 +16,7 @@
                                     <th class="align-middle text-end" style="width: 15%">Price</th>
                                     <th class="align-middle" style="width: 15%">Status</th>
                                     <th class="align-middle text-center" style="width: 15%">Actions</th>
+                                    <th class="align-middle text-center" style="width: 15%">Details</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -99,6 +100,11 @@
                                                         Cancel Item
                                                     </button>
                                                 <% } %>
+                                            </td>
+                                            <td>
+                                                <a href="/admin/order/order-details/<%= order._id %>" class="btn btn-primary btn-sm">
+                                                    View Details
+                                                </a>
                                             </td>
                                         </tr>
                                     <% }); %>
