@@ -12,6 +12,7 @@
                     <p><strong>Name:</strong> <%= order.userId.firstName %> <%= order.userId.lastName %></p>
                     <p><strong>Email:</strong> <%= order.userId.email %></p>
                     <p><strong>Phone:</strong> <%= order.userId.phone %></p>
+                    <p><strong>Address:</strong> <%= order.address[0].place %>,<%= order.address[0].city %>,<%= order.address[0].state %>,<%= order.address[0].pincode %>, Type:<%= order.address[0].addressType %></p>
                 </div>
                 <div class="col-md-6">
                     <h5>Order Information</h5>
