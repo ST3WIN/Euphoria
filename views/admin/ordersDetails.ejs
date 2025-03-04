@@ -41,11 +41,11 @@
                                 <td>
                                     <img src="/uploads/re-image/<%= item.product.productImage[0] %>" alt="<%= item.product.productName %>" style="width: 50px;">
                                 </td>
-                                <td>₹<%= item.price %></td>
+                                <td>₹<%= item.price.toLocaleString("en-IN") %></td>
                                 <td><%= item.quantity %></td>
                                 <td><%=item.paymentStatus%></td>
                                 <td><%= item.status %></td>
-                                <td>₹<%= item.price * item.quantity %></td>
+                                <td>₹<%= (item.price * item.quantity).toLocaleString("en-IN") %></td>
                             </tr>
                         <% }); %>
                     </tbody>
@@ -55,15 +55,19 @@
             <div class="row mt-4">
                 <div class="col-md-6 offset-md-6">
                     <table class="table table-bordered">
+                        <tr>
+                            <td><strong>Total price:</strong></td>
+                            <td>₹<%= order.totalPrice.toLocaleString("en-IN") %></td>
+                        </tr>
                         <% if (order.discount) { %>
                         <tr>
                             <td><strong>Discount:</strong></td>
-                            <td>₹<%= order.discount %></td>
+                            <td>₹<%= order.discount.toLocaleString("en-IN") %></td>
                         </tr>
                         <% } %>
                         <tr>
                             <td><strong>Final Amount:</strong></td>
-                            <td>₹<%= order.finalAmount %></td>
+                            <td>₹<%= order.finalAmount.toLocaleString("en-IN") %></td>
                         </tr>
                     </table>
                 </div>
