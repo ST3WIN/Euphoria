@@ -141,7 +141,7 @@ const loadEditCategory = async(req,res)=>{
       const id = req.query.id;
       const category= await Category.findOne({_id:id});
       const msg = req.query.msg ||"";
-      res.render("editcategory",{category:category,msg});
+      res.render("editCategory",{category:category,msg});
    
     } catch (error) {
       res.redirect("/pageError")
