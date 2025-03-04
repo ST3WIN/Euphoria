@@ -11,6 +11,7 @@ const crypto = require('crypto');
 const getCheckout = async (req, res) => {
     try {
         const userId = req.session.user._id;
+	console.log('userrrrrrrrrrrrrrrrrr', userId,req.session.user)
         const cart = await Cart.findOne({ userId }).populate('items.productId');
         
         if (!cart || cart.items.length === 0) {

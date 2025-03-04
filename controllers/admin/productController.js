@@ -47,25 +47,27 @@ const addProducts = async (req, res) => {
             if (req.files && req.files.length > 0) {
                 for (let i = 0; i < req.files.length; i++) {
                     const originalImagePath = req.files[i].path;
-                    const resizedImagePath = path.join(
+                    const resizedImagePath = path.resolve(
+			"..",
+			"..",
                         "public",
                         "uploads",
                         "product-images",
                         req.files[i].filename
                     );
 
-                    try {
+                    //try {
                         // Resize and save the image
-                        await sharp(originalImagePath)
-                            .resize({ width: 440, height: 440 })
-                            .toFile(resizedImagePath);
+                      //  await sharp(originalImagePath)
+                        //    .resize({ width: 440, height: 440 })
+                          //  .toFile(resizedImagePath);
 
                         images.push(req.files[i].filename);
-                    } catch (error) {
+                    //} catch (error) {
                         // If image processing fails, delete the uploaded file
-                        fs.unlinkSync(originalImagePath);
-                        throw new Error(`Failed to process image ${req.files[i].originalname}`);
-                    }
+                      //  fs.unlinkSync(originalImagePath);
+                        //throw new Error(`Failed to process image ${req.files[i].originalname}`);
+                    //}
                 }
             }
 

@@ -37,7 +37,7 @@ router.get("/auth/google/callback",
         failureMessage: true 
     }),
     (req, res) => {
-        req.session.user = req.user._id;
+        req.session.user = req.user;
         res.redirect("/");
     }
 )
