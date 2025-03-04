@@ -254,45 +254,32 @@
                             </thead>
                             <tbody>
                                 <% if (orders && orders.length > 0) { %>
-                                    <% orders.forEach((order, index) => { %>
+                                    <% let rowCounter = 1; %>
+                                    <% orders.forEach((order) => { %>
                                         <% order.orderItems.forEach(item => { %>
-                                            <tr>
-                                                <td><%= index + 1 %></td>
-                                                <td><%= new Date(order.createdOn).toLocaleDateString() %></td>
-                                                <td><%= order.userId ? `${order.userId.firstName} ${order.userId.lastName}` : 'N/A' %></td>
-                                                <td><%= order.paymentMethod || 'N/A' %></td>
-                                                <td>
-                                                    <% 
-                                                    let displayStatus = item.paymentStatus;
-                                                    let badgeClass = 'badge-soft-secondary';
-                                                    
-                                                    if (item.status === 'Cancelled') {
-                                                        if (order.paymentMethod === 'COD') {
-                                                            displayStatus = 'Cancelled';
-                                                            badgeClass = 'badge-soft-danger';
-                                                        } else {
-                                                            displayStatus = 'Refunded';
-                                                            badgeClass = 'badge-soft-info';
-                                                        }
-                                                    } else if (item.status === 'Returned' || item.status === 'Return Requested') {
-                                                        displayStatus = 'Refunded';
-                                                        badgeClass = 'badge-soft-info';
-                                                    } else if (item.paymentStatus === 'Paid') {
-                                                        badgeClass = 'badge-soft-success';
-                                                    } else if (item.paymentStatus === 'Pending') {
-                                                        badgeClass = 'badge-soft-warning';
-                                                    }
-                                                    %>
-                                                    <span class="badge <%= badgeClass %>"><%= displayStatus %></span>
-                                                </td>
-                                                <td><%= item.product ? item.product.productName : 'N/A' %></td>
-                                                <td><%= item.quantity %></td>
-                                                <td><%= formatIndianCurrency(item.price * item.quantity) %></td>
-                                                <td><%= formatIndianCurrency(order.discount || 0) %></td>
-                                                <td><%= formatIndianCurrency((item.price * item.quantity) - (order.discount || 0)) %></td>
-                                            </tr>
+                                            <% if (item.paymentStatus === 'Paid') { %>
+                                                <tr>
+                                                    <td><%= rowCounter++ %></td>
+                                                    <td><%= new Date(order.createdOn).toLocaleDateString() %></td>
+                                                    <td><%= order.userId ? `${order.userId.firstName} ${order.userId.lastName}` : 'N/A' %></td>
+                                                    <td><%= order.paymentMethod || 'N/A' %></td>
+                                                    <td>
+                                                        <span class="badge badge-soft-success">Paid</span>
+                                                    </td>
+                                                    <td><%= item.product ? item.product.productName : 'N/A' %></td>
+                                                    <td><%= item.quantity %></td>
+                                                    <td><%= formatIndianCurrency(item.price * item.quantity) %></td>
+                                                    <td><%= formatIndianCurrency(order.discount || 0) %></td>
+                                                    <td><%= formatIndianCurrency((item.price * item.quantity) - (order.discount || 0)) %></td>
+                                                </tr>
+                                            <% } %>
                                         <% }); %>
                                     <% }); %>
+                                    <% if (rowCounter === 1) { %>
+                                        <tr>
+                                            <td colspan="10" class="text-center">No paid orders found</td>
+                                        </tr>
+                                    <% } %>
                                 <% } else { %>
                                     <tr>
                                         <td colspan="10" class="text-center">No orders found</td>

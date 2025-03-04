@@ -541,7 +541,8 @@ const singleCancel = async(req,res)=>{
         // Update only the specific item's status to Cancelled
         const itemIndex = order.orderItems.findIndex(item => item.product.toString() === productId);
         if (itemIndex !== -1) {
-            order.orderItems[itemIndex].status = 'Cancelled';
+            order.orderItems[itemIndex].paymentStatus = 'Refunded'
+            order.orderItems[itemIndex].status = 'Cancelled'
         }
 
         await order.save();
